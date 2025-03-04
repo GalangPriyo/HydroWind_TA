@@ -15,11 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('location');
-            $table->decimal('latitude', 10, 6)->nullable();
-            $table->decimal('longitude', 10, 6)->nullable();
+            $table->decimal('latitude', 10, 6)->nullable(); // Menyimpan koordinat
+            $table->decimal('longitude', 10, 6)->nullable(); // Menyimpan koordinat
+            $table->string('token')->unique(); // Token unik untuk autentikasi
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.

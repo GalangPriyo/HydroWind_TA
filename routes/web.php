@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PenggunaController;
 
 // Route::get('/', function () {
 //     return Inertia::render('Guest/Welcome', [
@@ -36,12 +38,21 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     //Pengguna
-    Route::get('/admin/pengguna', [AdminController::class, 'indexPengguna'])->name('admin.pengguna');
-    Route::get('/admin/pengguna/add', [AdminController::class, 'createPengguna'])->name('admin.pengguna.create');
-    Route::post('/admin/pengguna/add', [AdminController::class, 'storePengguna'])->name('admin.pengguna.store');
-    Route::get('/admin/pengguna/{id}/edit', [AdminController::class, 'editPengguna'])->name('admin.pengguna.edit');
-    Route::put('/admin/pengguna/{id}', [AdminController::class, 'updatePengguna'])->name('admin.pengguna.update');
-    Route::delete('/admin/pengguna/{id}', [AdminController::class, 'deletePengguna'])->name('admin.pengguna.delete');
+    Route::get('/admin/pengguna', [PenggunaController::class, 'indexPengguna'])->name('admin.pengguna');
+    Route::get('/admin/pengguna/add', [PenggunaController::class, 'createPengguna'])->name('admin.pengguna.create');
+    Route::post('/admin/pengguna/add', [PenggunaController::class, 'storePengguna'])->name('admin.pengguna.store');
+    Route::get('/admin/pengguna/{id}/edit', [PenggunaController::class, 'editPengguna'])->name('admin.pengguna.edit');
+    Route::put('/admin/pengguna/{id}', [PenggunaController::class, 'updatePengguna'])->name('admin.pengguna.update');
+    Route::delete('/admin/pengguna/{id}', [PenggunaController::class, 'deletePengguna'])->name('admin.pengguna.delete');
+
+    //Alat
+    Route::get('/admin/devices', [DeviceController::class, 'index'])->name('admin.devices');
+    Route::get('/admin/devices/show/{id}', [DeviceController::class, 'show'])->name('admin.devices.show');
+    Route::get('/admin/devices/create', [DeviceController::class, 'create'])->name('admin.devices.create');
+    Route::post('/admin/devices/store', [DeviceController::class, 'store'])->name('admin.devices.store');
+    Route::get('/admin/devices/{id}/edit', [DeviceController::class, 'edit'])->name('admin.devices.edit');
+    Route::put('/admin/devices/{id}', [DeviceController::class, 'update'])->name('admin.devices.update');
+    Route::delete('/admin/devices/{id}', [DeviceController::class, 'destroy'])->name('admin.devices.delete');
 });
 
 
