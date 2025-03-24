@@ -6,8 +6,10 @@ defineOptions({ layout: GuestLayout });
 </script>
 
 <template>
-    <div class="min-h-screen flex items-center justify-center">
-        <div class="grid grid-cols-3 grid-rows-2 gap-4">
+    <div class="min-h-screen flex items-center justify-center pt-20 xl:pt-0">
+        <div
+            class="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-rows-2 gap-4"
+        >
             <div class="flex justify-center items-center">
                 <div class="card bg-base-100 w-96 shadow-xl">
                     <div class="card-body flex justify-center items-center p-0">
@@ -127,7 +129,7 @@ defineOptions({ layout: GuestLayout });
                                     <h3
                                         class="text-lg font-bold text-blue-700 mb-2"
                                     >
-                                        Sebelum Banjir
+                                        Saat Terjadi Banjir
                                     </h3>
                                     <ul class="list-none space-y-2">
                                         <li class="flex gap-2">
@@ -137,12 +139,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Pantau Informasi
-                                                    Cuaca:</span
+                                                    >Jaga Keselamatan
+                                                    Diri:</span
                                                 >
-                                                Selalu periksa prakiraan cuaca
-                                                dan peringatan dini dari BMKG
-                                                atau otoritas setempat.
+                                                Jika air mulai naik, segera
+                                                pindah ke tempat yang lebih
+                                                tinggi dan hindari berjalan di
+                                                air yang mengalir deras.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -152,12 +155,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Siapkan Tas Darurat:</span
+                                                    >Matikan Listrik dan
+                                                    Gas:</span
                                                 >
-                                                Isi dengan dokumen penting (KTP,
-                                                KK, sertifikat rumah), makanan
-                                                tahan lama, obat-obatan, senter,
-                                                power bank, dan pakaian ganti.
+                                                Cabut semua peralatan listrik
+                                                dan matikan aliran listrik serta
+                                                gas untuk menghindari korsleting
+                                                atau ledakan.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -167,12 +171,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Amankan Peralatan
-                                                    Listrik:</span
+                                                    >Gunakan Peralatan
+                                                    Keselamatan:</span
                                                 >
-                                                Pindahkan barang elektronik dan
-                                                dokumen penting ke tempat yang
-                                                lebih tinggi.
+                                                Jika harus melewati air, gunakan
+                                                pelampung atau benda yang bisa
+                                                mengapung seperti jerigen atau
+                                                ban bekas.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -182,14 +187,27 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Buat Rencana
-                                                    Evakuasi:</span
+                                                    >Hindari Air yang Terlihat
+                                                    Tercemar:</span
                                                 >
-                                                Tentukan jalur dan tempat
-                                                evakuasi terdekat, serta
-                                                berkomunikasi dengan tetangga
-                                                atau keluarga tentang rencana
-                                                darurat.
+                                                Jangan menyentuh atau meminum
+                                                air banjir karena bisa
+                                                terkontaminasi bahan kimia atau
+                                                limbah berbahaya.
+                                            </span>
+                                        </li>
+                                        <li class="flex gap-2">
+                                            <span
+                                                class="text-blue-700 font-bold"
+                                                >•</span
+                                            >
+                                            <span class="pl-1 text-gray-800">
+                                                <span class="font-semibold"
+                                                    >Jangan Panik dan Tetap
+                                                    Tenang:</span
+                                                >
+                                                Cari pertolongan dan hubungi
+                                                pihak berwenang jika diperlukan.
                                             </span>
                                         </li>
                                     </ul>
@@ -228,7 +246,7 @@ defineOptions({ layout: GuestLayout });
                                     <h3
                                         class="text-lg font-bold text-blue-700 mb-2"
                                     >
-                                        Sebelum Banjir
+                                        Setelah Banjir Surut
                                     </h3>
                                     <ul class="list-none space-y-2">
                                         <li class="flex gap-2">
@@ -238,12 +256,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Pantau Informasi
-                                                    Cuaca:</span
+                                                    >Periksa Keselamatan
+                                                    Lingkungan:</span
                                                 >
-                                                Selalu periksa prakiraan cuaca
-                                                dan peringatan dini dari BMKG
-                                                atau otoritas setempat.
+                                                Hindari kabel listrik yang
+                                                terendam, lubang tersembunyi,
+                                                atau struktur bangunan yang
+                                                tampak rapuh.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -253,12 +272,12 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Siapkan Tas Darurat:</span
+                                                    >Bersihkan Rumah dengan
+                                                    Hati-hati:</span
                                                 >
-                                                Isi dengan dokumen penting (KTP,
-                                                KK, sertifikat rumah), makanan
-                                                tahan lama, obat-obatan, senter,
-                                                power bank, dan pakaian ganti.
+                                                Gunakan sarung tangan dan masker
+                                                saat membersihkan lumpur atau
+                                                air yang menggenang.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -268,12 +287,12 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Amankan Peralatan
-                                                    Listrik:</span
+                                                    >Cek Kesehatan:</span
                                                 >
-                                                Pindahkan barang elektronik dan
-                                                dokumen penting ke tempat yang
-                                                lebih tinggi.
+                                                Jika merasa tidak sehat atau
+                                                terkena penyakit akibat banjir,
+                                                segera periksakan diri ke
+                                                fasilitas kesehatan.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -283,14 +302,12 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Buat Rencana
-                                                    Evakuasi:</span
+                                                    >Pastikan Air Minum
+                                                    Aman:</span
                                                 >
-                                                Tentukan jalur dan tempat
-                                                evakuasi terdekat, serta
-                                                berkomunikasi dengan tetangga
-                                                atau keluarga tentang rencana
-                                                darurat.
+                                                Rebus air sebelum dikonsumsi
+                                                atau gunakan air kemasan yang
+                                                aman.
                                             </span>
                                         </li>
                                     </ul>
@@ -329,7 +346,7 @@ defineOptions({ layout: GuestLayout });
                                     <h3
                                         class="text-lg font-bold text-blue-700 mb-2"
                                     >
-                                        Sebelum Banjir
+                                        Sebelum Angin Kencang
                                     </h3>
                                     <ul class="list-none space-y-2">
                                         <li class="flex gap-2">
@@ -354,12 +371,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Siapkan Tas Darurat:</span
+                                                    >Amankan Barang di Luar
+                                                    Rumah:</span
                                                 >
-                                                Isi dengan dokumen penting (KTP,
-                                                KK, sertifikat rumah), makanan
-                                                tahan lama, obat-obatan, senter,
-                                                power bank, dan pakaian ganti.
+                                                Pastikan benda-benda seperti pot
+                                                bunga, jemuran, dan perabotan
+                                                luar ruangan tidak mudah terbawa
+                                                angin.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -369,12 +387,12 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Amankan Peralatan
-                                                    Listrik:</span
+                                                    >Periksa Kondisi
+                                                    Rumah:</span
                                                 >
-                                                Pindahkan barang elektronik dan
-                                                dokumen penting ke tempat yang
-                                                lebih tinggi.
+                                                Perkuat atap, jendela, dan pintu
+                                                agar tidak mudah rusak saat
+                                                terkena angin kencang.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -384,14 +402,12 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Buat Rencana
-                                                    Evakuasi:</span
+                                                    >Siapkan Peralatan
+                                                    Darurat:</span
                                                 >
-                                                Tentukan jalur dan tempat
-                                                evakuasi terdekat, serta
-                                                berkomunikasi dengan tetangga
-                                                atau keluarga tentang rencana
-                                                darurat.
+                                                Sediakan senter, power bank,
+                                                radio, makanan tahan lama, dan
+                                                air minum dalam jumlah cukup.
                                             </span>
                                         </li>
                                     </ul>
@@ -430,7 +446,7 @@ defineOptions({ layout: GuestLayout });
                                     <h3
                                         class="text-lg font-bold text-blue-700 mb-2"
                                     >
-                                        Sebelum Banjir
+                                        Saat Angin Kencang Terjadi
                                     </h3>
                                     <ul class="list-none space-y-2">
                                         <li class="flex gap-2">
@@ -440,12 +456,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Pantau Informasi
-                                                    Cuaca:</span
+                                                    >Tetap di Dalam
+                                                    Ruangan:</span
                                                 >
-                                                Selalu periksa prakiraan cuaca
-                                                dan peringatan dini dari BMKG
-                                                atau otoritas setempat.
+                                                Jangan keluar rumah kecuali
+                                                dalam keadaan darurat, dan
+                                                hindari berada di dekat jendela
+                                                atau pintu kaca.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -455,12 +472,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Siapkan Tas Darurat:</span
+                                                    >Matikan Peralatan Listrik
+                                                    yang Tidak Diperlukan:</span
                                                 >
-                                                Isi dengan dokumen penting (KTP,
-                                                KK, sertifikat rumah), makanan
-                                                tahan lama, obat-obatan, senter,
-                                                power bank, dan pakaian ganti.
+                                                Untuk mencegah korsleting akibat
+                                                kabel listrik yang putus, cabut
+                                                peralatan elektronik yang tidak
+                                                digunakan.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -470,12 +488,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Amankan Peralatan
-                                                    Listrik:</span
+                                                    >Jangan Berlindung di Bawah
+                                                    Pohon atau Baliho:</span
                                                 >
-                                                Pindahkan barang elektronik dan
-                                                dokumen penting ke tempat yang
-                                                lebih tinggi.
+                                                Hindari berteduh di bawah pohon,
+                                                baliho, atau bangunan yang
+                                                tampak rapuh karena berisiko
+                                                roboh.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -485,14 +504,27 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Buat Rencana
-                                                    Evakuasi:</span
+                                                    >Cari Tempat Perlindungan
+                                                    yang Aman:</span
                                                 >
-                                                Tentukan jalur dan tempat
-                                                evakuasi terdekat, serta
-                                                berkomunikasi dengan tetangga
-                                                atau keluarga tentang rencana
-                                                darurat.
+                                                Jika berada di luar ruangan,
+                                                segera cari bangunan kokoh untuk
+                                                berlindung.
+                                            </span>
+                                        </li>
+                                        <li class="flex gap-2">
+                                            <span
+                                                class="text-blue-700 font-bold"
+                                                >•</span
+                                            >
+                                            <span class="pl-1 text-gray-800">
+                                                <span class="font-semibold"
+                                                    >Tetap Tenang dan
+                                                    Waspada:</span
+                                                >
+                                                Jangan panik, tetap pantau
+                                                informasi terbaru, dan ikuti
+                                                arahan dari pihak berwenang.
                                             </span>
                                         </li>
                                     </ul>
@@ -531,7 +563,7 @@ defineOptions({ layout: GuestLayout });
                                     <h3
                                         class="text-lg font-bold text-blue-700 mb-2"
                                     >
-                                        Sebelum Banjir
+                                        Setelah Angin Kencang
                                     </h3>
                                     <ul class="list-none space-y-2">
                                         <li class="flex gap-2">
@@ -541,12 +573,13 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Pantau Informasi
-                                                    Cuaca:</span
+                                                    >Periksa Kondisi
+                                                    Lingkungan:</span
                                                 >
-                                                Selalu periksa prakiraan cuaca
-                                                dan peringatan dini dari BMKG
-                                                atau otoritas setempat.
+                                                Waspadai kabel listrik yang
+                                                jatuh, puing bangunan, atau
+                                                pohon tumbang yang bisa
+                                                membahayakan.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -556,12 +589,12 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Siapkan Tas Darurat:</span
+                                                    >Cek Keadaan Rumah:</span
                                                 >
-                                                Isi dengan dokumen penting (KTP,
-                                                KK, sertifikat rumah), makanan
-                                                tahan lama, obat-obatan, senter,
-                                                power bank, dan pakaian ganti.
+                                                Periksa atap, jendela, dan
+                                                dinding rumah untuk memastikan
+                                                tidak ada kerusakan yang
+                                                berbahaya.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -571,12 +604,12 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Amankan Peralatan
-                                                    Listrik:</span
+                                                    >Bersihkan dengan
+                                                    Hati-hati:</span
                                                 >
-                                                Pindahkan barang elektronik dan
-                                                dokumen penting ke tempat yang
-                                                lebih tinggi.
+                                                Gunakan sarung tangan dan sepatu
+                                                saat membersihkan puing atau
+                                                benda tajam yang berhamburan.
                                             </span>
                                         </li>
                                         <li class="flex gap-2">
@@ -586,14 +619,28 @@ defineOptions({ layout: GuestLayout });
                                             >
                                             <span class="pl-1 text-gray-800">
                                                 <span class="font-semibold"
-                                                    >Buat Rencana
-                                                    Evakuasi:</span
+                                                    >Laporkan Kerusakan kepada
+                                                    Pihak Berwenang:</span
                                                 >
-                                                Tentukan jalur dan tempat
-                                                evakuasi terdekat, serta
-                                                berkomunikasi dengan tetangga
-                                                atau keluarga tentang rencana
-                                                darurat.
+                                                Jika ada kabel listrik putus
+                                                atau infrastruktur rusak, segera
+                                                hubungi dinas terkait.
+                                            </span>
+                                        </li>
+                                        <li class="flex gap-2">
+                                            <span
+                                                class="text-blue-700 font-bold"
+                                                >•</span
+                                            >
+                                            <span class="pl-1 text-gray-800">
+                                                <span class="font-semibold"
+                                                    >Pastikan Air dan Makanan
+                                                    Aman Dikonsumsi:</span
+                                                >
+                                                Jika listrik padam, periksa
+                                                bahan makanan di kulkas dan
+                                                pastikan air minum dalam keadaan
+                                                bersih.
                                             </span>
                                         </li>
                                     </ul>

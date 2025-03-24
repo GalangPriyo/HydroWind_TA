@@ -5,9 +5,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\GuestController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\MonitoringController;
+use App\Http\Controllers\NotificationController;
 
 // Route::get('/', function () {
 //     return Inertia::render('Guest/Welcome', [
@@ -63,22 +66,13 @@ Route::middleware('auth')->group(function () {
 });
 
 //GUEST
-Route::get('/', function () {
-    return Inertia::render('Guest/Welcome');
-})->name('home');
+//Monitoring
+Route::get('/', [GuestController::class, 'home'])->name('home');
+Route::get('/panduan', [GuestController::class, 'panduan'])->name('panduan');
+Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring');
+Route::get('/peta', [GuestController::class, 'showMap'])->name('guest.peta');
 
-Route::get('/peta', function () {
-    return Inertia::render('Guest/Peta', [
-        'googleMapsApiKey' => config('services.google_maps.key')
-    ]);
-})->name('peta');
-
-Route::get('/panduan', function () {
-    return Inertia::render('Guest/Panduan');
-})->name('panduan');
-
-Route::get('/prakiraan-cuaca', function () {
-    return Inertia::render('Guest/PraCuaca');
-})->name('prakiraan-cuaca');
+Route::get('/send-alert', [NotificationController::class, 'sendAlert']);
+Route::get('/send-bulk-alert', [NotificationController::class, 'sendBulkAlert']);
 
 require __DIR__ . '/auth.php';

@@ -2,60 +2,89 @@
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import { onMounted } from "vue";
 import { usePage } from "@inertiajs/vue3";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 defineOptions({ layout: GuestLayout });
 
-const { props } = usePage(); // Ambil props dari Inertia
+const { props } = usePage(); // Mengambil data devices dari backend
 
 onMounted(() => {
-    const apiKey = props.googleMapsApiKey; // Ambil API Key dari props
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
+    let map = L.map("map", {
+        zoomControl: false, // Matikan kontrol zoom default
+    }).setView([-7.05294, 110.623819], 17);
 
-    window.initMap = function () {
-        const map = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: -7.051049, lng: 110.625776 },
-            zoom: 15,
-        });
+    // **Tile Layers**
+    let osmLayer = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            attribution: "&copy; OpenStreetMap contributors",
+        }
+    );
 
-        // Data dummy node sensor
-        const nodes = [
-            {
-                id: 1,
-                latitude: -7.053919,
-                longitude: 110.622893,
-                arah_angin: 90,
-            },
-            {
-                id: 2,
-                latitude: -7.051581,
-                longitude: 110.623795,
-                arah_angin: 180,
-            },
-        ];
+    let esriLayer = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+            attribution:
+                "&copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics",
+        }
+    );
 
-        nodes.forEach((node) => {
-            const { latitude, longitude, arah_angin } = node;
+    let googleSatellite = L.tileLayer(
+        "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        {
+            subdomains: ["mt0", "mt1", "mt2", "mt3"],
+            attribution: "&copy; Google Maps",
+        }
+    );
 
-            new google.maps.Marker({
-                position: { lat: latitude, lng: longitude },
-                map: map,
-                icon: {
-                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                    scale: 5,
-                    rotation: arah_angin, // Rotasi sesuai arah angin
-                    strokeColor: "red",
-                },
-                title: `Node ${node.id}\nArah Angin: ${arah_angin}°`,
-            });
-        });
+    let googleRoadmap = L.tileLayer(
+        "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        {
+            subdomains: ["mt0", "mt1", "mt2", "mt3"],
+            attribution: "&copy; Google Maps",
+        }
+    );
+
+    // **Set Default Layer**
+    googleRoadmap.addTo(map);
+
+    // **Layer Control**
+    let baseMaps = {
+        "Google Roadmap": googleRoadmap,
+        OpenStreetMap: osmLayer,
+        "Esri World Imagery": esriLayer,
+        "Google Satellite": googleSatellite,
     };
+
+    L.control.layers(baseMaps, null, { position: "topleft" }).addTo(map);
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+    // **Tambahkan Marker dari Database**
+    props.devices.forEach((device) => {
+        L.marker([device.latitude, device.longitude])
+            .addTo(map)
+            .bindPopup(
+                `<b>${device.name}</b><br>Lat: ${device.latitude}, Lng: ${device.longitude}`
+            );
+    });
+
+    // **Nonaktifkan zoom dengan scroll**
+    // map.scrollWheelZoom.disable();
 });
 </script>
 
 <template>
-    <div id="map" class="min-h-screen"></div>
+    <p class="text-center font-bold text-2xl sm:text-3xl pb-6 mt-20">
+        Peta Lokasi Penempatan Alat
+    </p>
+    <div class="card bg-base-100 card-sm shadow-sm w-[90%] mx-auto">
+        <div class="card-body p-0">
+            <div
+                id="map"
+                class="w-full rounded-xl z-0"
+                style="height: 75vh"
+            ></div>
+        </div>
+    </div>
 </template>
