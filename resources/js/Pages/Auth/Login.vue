@@ -29,18 +29,34 @@ defineOptions({ layout: GuestLayout });
 
 <template>
     <Head title="Log in" />
-    <div class="hero bg-base-200 min-h-screen">
-        <div class="hero-content flex-col lg:flex-row-reverse">
-            <div class="text-center lg:text-left">
-                <h1 class="text-5xl font-bold">Login now!</h1>
-                <p class="py-6">
-                    Provident cupiditate voluptatem et in. Quaerat fugiat ut
-                    assumenda excepturi exercitationem quasi. In deleniti eaque
-                    aut repudiandae et a id nisi.
+    <div class="hero bg-gradient-to-b from-blue-200 to-cyan-200 min-h-screen">
+        <div class="hero-content flex-col lg:flex-row-reverse pt-16">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold">Ayo Masuk ke Akunmu!</h1>
+                <img
+                    src="/assets/media/login.png"
+                    alt="Tidak ada perangkat"
+                    class="w-1/2 mx-auto py-8"
+                />
+                <p>
+                    Sudah punya akun? Langsung login untuk mulai menerima
+                    notifikasi bencana dan melihat data historis.
                 </p>
+                <div class="form-control mt-4">
+                    <Link
+                        :href="route('register')"
+                        class="label-text-alt link link-hover text-blue-500"
+                        >Saya belum memiliki akun</Link
+                    >
+                </div>
             </div>
-            <div class="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
+            <div class="card glass w-full max-w-md shrink-0 shadow-2xl">
                 <form class="card-body" @submit.prevent="submit">
+                    <img
+                        src="/assets/media/HydroWind.jpeg"
+                        alt="HydroWind Logo"
+                        class="w-16 h-16 rounded-full mx-auto"
+                    />
                     <div class="form-control">
                         <label class="label">
                             <InputLabel
@@ -85,12 +101,12 @@ defineOptions({ layout: GuestLayout });
                         <label class="label" v-if="canResetPassword">
                             <Link
                                 :href="route('password.request')"
-                                class="label-text-alt link link-hover"
-                                >Forgot password?</Link
+                                class="label-text-alt link link-hover text-blue-500"
+                                >Lupa password?</Link
                             >
                         </label>
                     </div>
-                    <div class="form-control mt-4">
+                    <!-- <div class="form-control mt-4">
                         <label class="flex items-center">
                             <Checkbox
                                 name="remember"
@@ -100,7 +116,7 @@ defineOptions({ layout: GuestLayout });
                                 >Remember me</span
                             >
                         </label>
-                    </div>
+                    </div> -->
                     <div class="form-control mt-6">
                         <PrimaryButton
                             class="btn btn-primary w-full"

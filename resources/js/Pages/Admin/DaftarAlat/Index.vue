@@ -33,6 +33,7 @@ const confirmDelete = (event) => {
                     <th class="border p-2">Lokasi</th>
                     <th class="border p-2">Latitude</th>
                     <th class="border p-2">Longitude</th>
+                    <th class="border p-2">Identifier</th>
                     <th class="border p-2">Token</th>
                     <th class="border p-2">Aksi</th>
                 </tr>
@@ -44,7 +45,8 @@ const confirmDelete = (event) => {
                     <td class="border p-2">{{ device.location }}</td>
                     <td class="border p-2">{{ device.latitude }}</td>
                     <td class="border p-2">{{ device.longitude }}</td>
-                    <td class="border p-2 text-xs text-gray-600">
+                    <td class="border p-2">{{ device.identifier }}</td>
+                    <td class="border p-2">
                         {{ device.token }}
                     </td>
                     <td class="border p-2">

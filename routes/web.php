@@ -9,7 +9,6 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PenggunaController;
-use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\NotificationController;
 
 // Route::get('/', function () {
@@ -22,11 +21,8 @@ use App\Http\Controllers\NotificationController;
 // });
 
 Route::middleware(['auth', 'verified', 'user'])->group(function () {
-    // Dashboard User
     Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
-
-    // // Halaman Riwayat
-    // Route::get('/user/history', [UserController::class, 'history'])->name('user.history');
+    Route::get('/user/riwayat', [UserController::class, 'riwayat'])->name('user.riwayat');
 
     //Whastapp
     Route::get('/user/whatsapp', [UserController::class, 'indexWhatsapp'])->name('user.whatsapp');
@@ -39,6 +35,7 @@ Route::middleware(['auth', 'verified', 'user'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/riwayat', [AdminController::class, 'riwayat'])->name('admin.riwayat');
 
     //Pengguna
     Route::get('/admin/pengguna', [PenggunaController::class, 'indexPengguna'])->name('admin.pengguna');
@@ -47,6 +44,7 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/admin/pengguna/{id}/edit', [PenggunaController::class, 'editPengguna'])->name('admin.pengguna.edit');
     Route::put('/admin/pengguna/{id}', [PenggunaController::class, 'updatePengguna'])->name('admin.pengguna.update');
     Route::delete('/admin/pengguna/{id}', [PenggunaController::class, 'deletePengguna'])->name('admin.pengguna.delete');
+    Route::get('/admin/pengguna/download', [PenggunaController::class, 'downloadPengguna'])->name('admin.pengguna.download');
 
     //Alat
     Route::get('/admin/devices', [DeviceController::class, 'index'])->name('admin.devices');
@@ -69,7 +67,7 @@ Route::middleware('auth')->group(function () {
 //Monitoring
 Route::get('/', [GuestController::class, 'home'])->name('home');
 Route::get('/panduan', [GuestController::class, 'panduan'])->name('panduan');
-Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring');
+Route::get('/monitoring', [GuestController::class, 'monitoring'])->name('monitoring');
 Route::get('/peta', [GuestController::class, 'showMap'])->name('guest.peta');
 
 Route::get('/send-alert', [NotificationController::class, 'sendAlert']);

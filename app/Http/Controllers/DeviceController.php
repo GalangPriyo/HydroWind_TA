@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Device;
 use App\Models\Sensor;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -48,8 +49,8 @@ class DeviceController extends Controller
             'location' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'sensors' => 'required|array|min:1|max:4', // Minimal 1, maksimal 3 sensor
-            'sensors.*.name' => 'required|in:rain_intensity,water_level,wind_speed,wind_direction',
+            'sensors' => 'required|array|min:1|max:5', // Minimal 1, maksimal 3 sensor
+            'sensors.*.name' => 'required|in:curah_hujan,ketinggian_air,kecepatan_angin,arah_angin,tekanan_udara',
             'sensors.*.unit' => 'required|string|max:10',
         ]);
 
@@ -140,5 +141,31 @@ class DeviceController extends Controller
         $device->delete(); // Karena ada `onDelete('cascade')`, sensor ikut terhapus
 
         return redirect()->route('admin.devices')->with('success', 'Device berhasil dihapus!');
+    }
+
+    public function provision(Request $request)
+    {
+        $request->validate([
+            'identifier' => 'required|string|max:255', // MAC address dari ESP32
+        ]);
+
+        $incomingIdentifier = $request->identifier;
+
+        // Cek apakah device dengan identifier sementara (MAC address) sudah pernah daftar
+        $device = Device::where('identifier', $incomingIdentifier)->first();
+
+        if (!$device) {
+            // Buat device baru dengan UUID sebagai identifier resmi dan token acak
+            $device = Device::create([
+                'identifier' => (string) Str::uuid(), // UUID sebagai identifier sebenarnya
+                'token' => Str::random(32),
+                'mac_address' => $incomingIdentifier, // Simpan juga MAC sebagai referensi
+            ]);
+        }
+
+        return response()->json([
+            'identifier' => $device->identifier,
+            'token' => $device->token,
+        ]);
     }
 }

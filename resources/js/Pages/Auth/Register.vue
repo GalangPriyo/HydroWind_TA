@@ -25,18 +25,34 @@ defineOptions({ layout: GuestLayout });
 
 <template>
     <Head title="Register" />
-    <div class="hero bg-base-200 min-h-screen">
-        <div class="hero-content flex-col lg:flex-row">
-            <div class="text-center lg:text-left">
-                <h1 class="text-5xl font-bold">Register now!</h1>
-                <p class="py-6">
-                    Provident cupiditate voluptatem et in. Quaerat fugiat ut
-                    assumenda excepturi exercitationem quasi. In deleniti eaque
-                    aut repudiandae et a id nisi.
+    <div class="hero bg-gradient-to-b from-blue-200 to-cyan-200 min-h-screen">
+        <div class="hero-content flex-col lg:flex-row pt-20">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold">Mulai Daftar Sekarang!</h1>
+                <img
+                    src="/assets/media/register.png"
+                    alt="Tidak ada perangkat"
+                    class="w-1/2 mx-auto py-8"
+                />
+                <p>
+                    Belum punya akun? Yuk, daftar dulu biar bisa pantau data dan
+                    terima notifikasi peringatan secara langsung.
                 </p>
+                <div class="form-control mt-4">
+                    <Link
+                        :href="route('login')"
+                        class="label-text-alt link link-hover text-blue-500"
+                        >Saya sudah memiliki akun</Link
+                    >
+                </div>
             </div>
-            <div class="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">
+            <div class="card glass w-full max-w-md shrink-0 shadow-2xl">
                 <form class="card-body" @submit.prevent="submit">
+                    <img
+                        src="/assets/media/HydroWind.jpeg"
+                        alt="HydroWind Logo"
+                        class="w-16 h-16 rounded-full mx-auto"
+                    />
                     <div class="form-control">
                         <label class="label">
                             <InputLabel
@@ -120,16 +136,10 @@ defineOptions({ layout: GuestLayout });
                             :message="form.errors.password_confirmation"
                         />
                     </div>
-                    <div class="form-control mt-4">
-                        <Link
-                            :href="route('login')"
-                            class="label-text-alt link link-hover"
-                            >Already registered?</Link
-                        >
-                    </div>
+
                     <div class="form-control mt-6">
                         <PrimaryButton
-                            class="btn btn-primary w-full"
+                            class="btn btn-blue w-full"
                             :class="{ 'opacity-25': form.processing }"
                             :disabled="form.processing"
                         >

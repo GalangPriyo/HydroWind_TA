@@ -6,7 +6,12 @@ defineOptions({ layout: GuestLayout });
 </script>
 
 <template>
-    <div class="min-h-screen flex items-center justify-center pt-20 xl:pt-0">
+    <div
+        class="min-h-screen flex flex-col items-center xl:pt-0 bg-gradient-to-b from-blue-200 to-cyan-200"
+    >
+        <p class="text-center font-bold text-2xl sm:text-3xl pb-6 pt-20">
+            Panduan Penanggulangan Bencana
+        </p>
         <div
             class="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 grid-rows-2 gap-4"
         >

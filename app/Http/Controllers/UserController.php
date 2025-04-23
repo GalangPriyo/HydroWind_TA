@@ -18,9 +18,9 @@ class UserController extends Controller
     }
 
     // Menampilkan Riwayat Aktivitas User
-    public function history()
+    public function riwayat()
     {
-        return Inertia::render('User/History', [
+        return Inertia::render('User/UserRiwayat', [
             'user' => Auth::user()
         ]);
     }

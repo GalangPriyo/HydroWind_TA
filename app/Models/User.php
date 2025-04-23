@@ -47,4 +47,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
         ];
     }
+
+    public function whatsapp()
+    {
+        return $this->hasOne(Whatsapp::class, 'user_id');
+    }
 }

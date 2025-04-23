@@ -9,6 +9,9 @@ use App\Models\Whatsapp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Response;
 
 class PenggunaController extends Controller
 {
@@ -17,13 +20,46 @@ class PenggunaController extends Controller
     {
         $users = Pengguna::where('role', 'user')
             ->with('whatsapp')
-            ->get();
+            ->paginate(20);
 
         return Inertia::render('Admin/DaftarPengguna/Index', [
             'users' => $users,
             'user' => Auth::user()
         ]);
     }
+
+
+    public function downloadPengguna()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set judul kolom
+        $sheet->setCellValue('A1', 'Nama');
+        $sheet->setCellValue('B1', 'Email');
+        $sheet->setCellValue('C1', 'Nomor WA');
+
+        // Ambil data
+        $users = \App\Models\User::with('whatsapp')->get();
+
+        $row = 2;
+        foreach ($users as $user) {
+            $sheet->setCellValue('A' . $row, $user->name);
+            $sheet->setCellValue('B' . $row, $user->email);
+            $sheet->setCellValue('C' . $row, $user->whatsapp->phone_number ?? '-');
+            $row++;
+        }
+
+        // Simpan ke file sementara
+        $fileName = 'daftar_pengguna.xlsx';
+        $temp_file = tempnam(sys_get_temp_dir(), $fileName);
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($temp_file);
+
+        // Kirim response download
+        return response()->download($temp_file, $fileName)->deleteFileAfterSend(true);
+    }
+
 
     // GET Create Form
     public function createPengguna()

@@ -11,7 +11,7 @@ const form = useForm({
 
 // Menambah sensor baru
 const addSensor = () => {
-    if (form.sensors.length < 3) {
+    if (form.sensors.length < 5) {
         form.sensors.push({ name: "", unit: "" });
     }
 };
@@ -73,10 +73,11 @@ const submit = () => {
                     required
                 >
                     <option value="" disabled>Pilih Sensor</option>
-                    <option value="rain_intensity">Rain Intensity</option>
-                    <option value="water_level">Water Level</option>
-                    <option value="wind_speed">Wind Speed</option>
-                    <option value="wind_direction">Wind Direction</option>
+                    <option value="curah_hujan">Curah Hujan</option>
+                    <option value="ketinggian_air">Ketinggian Air</option>
+                    <option value="kecepatan_angin">Kecepatan Angin</option>
+                    <option value="arah_angin">Arah Angin</option>
+                    <option value="tekanan_udara">Tekanan Udara</option>
                 </select>
                 <input
                     v-model="sensor.unit"
@@ -97,7 +98,7 @@ const submit = () => {
             <button
                 type="button"
                 @click="addSensor"
-                v-if="form.sensors.length < 3"
+                v-if="form.sensors.length < 5"
                 class="bg-green-500 text-white px-4 py-2 rounded"
             >
                 Tambah Sensor
