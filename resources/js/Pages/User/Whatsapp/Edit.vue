@@ -1,5 +1,5 @@
 <script setup>
-import { useForm } from "@inertiajs/vue3";
+import { useForm, Head } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Swal from "sweetalert2";
 
@@ -56,7 +56,8 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="bg-base200 flex flex-col gap-4 items-start justify-center">
+    <Head title="WhatsApp" />
+    <div class="flex flex-col gap-4 items-start justify-center">
         <!-- Tombol Back -->
         <button
             @click="$inertia.visit(route('user.whatsapp'))"

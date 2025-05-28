@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('sensors', function (Blueprint $table) {
             $table->id();
             $table->foreignId('device_id')->constrained('devices')->onDelete('cascade');
-            $table->enum('name', ['curah_hujan', 'ketinggian_air', 'kecepatan_angin', 'arah_angin', 'tekanan_udara']);
-            $table->string('unit');
+            $table->enum('name', ['curah_hujan', 'ketinggian_air', 'kecepatan_angin', 'tekanan_udara']);
             $table->timestamps();
         });
     }

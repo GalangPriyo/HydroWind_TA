@@ -1,5 +1,5 @@
 <script setup>
-import { Link } from "@inertiajs/vue3";
+import { Link, Head } from "@inertiajs/vue3";
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import Safe from "@/Components/Safe.vue";
 import Danger from "@/Components/Danger.vue";
@@ -13,6 +13,7 @@ const props = defineProps({
 </script>
 
 <template>
+    <Head title="Homepage" />
     <div class="min-h-screen">
         <div class="relative hero min-h-screen">
             <!-- Background Gambar -->

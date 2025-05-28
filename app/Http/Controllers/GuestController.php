@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Device;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\Device;
+use App\Models\SensorData;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class GuestController extends Controller
 {
@@ -19,9 +22,14 @@ class GuestController extends Controller
         return Inertia::render('Guest/Panduan');
     }
 
-    public function monitoring(): Response
+    public function monitoring()
     {
-        return Inertia::render('Guest/Monitoring');
+
+        $nodeIds = \App\Models\Device::where('status', 'active')
+            ->whereNotNull('node_id')
+            ->pluck('node_id')
+            ->all();
+        return Inertia::render('Guest/Monitoring', ['registeredNodeIds' => $nodeIds]);
     }
 
     public function showMap(): Response

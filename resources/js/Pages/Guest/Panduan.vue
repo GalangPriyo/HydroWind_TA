@@ -1,11 +1,12 @@
 <script setup>
-import { Link } from "@inertiajs/vue3";
+import { Link, Head } from "@inertiajs/vue3";
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 
 defineOptions({ layout: GuestLayout });
 </script>
 
 <template>
+    <Head title="Panduan" />
     <div
         class="min-h-screen flex flex-col items-center xl:pt-0 bg-gradient-to-b from-blue-200 to-cyan-200"
     >

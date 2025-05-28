@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('batteries', function (Blueprint $table) {
+            $table->boolean('charging')->default(false)->after('level');
+            $table->float('temperature')->nullable()->after('charging');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('batteries', function (Blueprint $table) {
+            $table->dropColumn(['charging', 'temperature']);
+        });
+    }
+};

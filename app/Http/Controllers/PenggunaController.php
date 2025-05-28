@@ -16,15 +16,33 @@ use Illuminate\Support\Facades\Response;
 class PenggunaController extends Controller
 {
     // GET Index Form
-    public function indexPengguna()
+    public function indexPengguna(Request $request)
     {
-        $users = Pengguna::where('role', 'user')
+        $query = Pengguna::where('role', 'user')
             ->with('whatsapp')
-            ->paginate(20);
+            ->latest();
+
+        if ($request->has('search')) {
+            $search = strtolower($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('whatsapp', function ($q2) use ($search) {
+                        $q2->whereRaw('LOWER(phone_number) LIKE ?', ["%{$search}%"]);
+                    });
+            });
+        }
+
+        $users = $query->paginate(10)->withQueryString(); // Tetap pakai pagination
 
         return Inertia::render('Admin/DaftarPengguna/Index', [
+            'user' => Auth::user(),
             'users' => $users,
-            'user' => Auth::user()
+            'search' => $request->search ?? '',
+            'stats' => [
+                'totalUsers' => User::where('role', 'user')->count(),
+                'usersWithWhatsapp' => User::whereHas('whatsapp')->count(),
+            ],
         ]);
     }
 

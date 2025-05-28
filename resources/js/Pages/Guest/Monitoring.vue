@@ -2,9 +2,16 @@
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import { onMounted, nextTick, ref, onUnmounted } from "vue";
 import Chart from "chart.js/auto";
-import { connectMQTT, removeMQTTHandler } from "@/mqtt/mqttClient";
+import Echo from "laravel-echo";
+import { Head } from "@inertiajs/vue3";
 
 defineOptions({ layout: GuestLayout });
+
+const props = defineProps({
+    registeredNodeIds: Array,
+});
+
+const validNodeIds = ref(props.registeredNodeIds || []);
 
 const mqttData = ref([]); // Data dari MQTT
 const charts = []; // Referensi chart berdasarkan ID
@@ -86,22 +93,35 @@ const updateOrCreateChart = async (formattedData) => {
 function handleMQTTData(newData) {
     if (
         !newData ||
-        typeof newData.sensors !== "object" ||
-        newData.sensors === null
+        typeof newData.sensor !== "object" ||
+        newData.sensor === null
     ) {
         return; // abaikan jika bukan data sensor
     }
-    const formattedSensors = Object.keys(newData.sensors).map((key) => ({
-        type: newData.sensors[key].type,
-        value: newData.sensors[key].value,
-        unit: newData.sensors[key].unit,
+
+    // // 💡 Filter node_id yang tidak terdaftar
+    if (!validNodeIds.value.includes(newData.node_id)) {
+        console.warn("Data dari node_id tidak dikenal:", newData.node_id);
+        return;
+    }
+
+    const sensorUnits = {
+        kecepatan_angin: "m/s",
+        ketinggian_air: "cm",
+        curah_hujan: "mm",
+        tekanan_udara: "mb",
+    };
+
+    const formattedSensors = Object.keys(newData.sensor).map((key) => ({
+        type: key,
+        value: parseFloat(newData.sensor[key]) || 0,
+        unit: sensorUnits[key] || "N/A",
     }));
 
     const formattedData = {
         node_id: newData.node_id,
         timestamp: newData.timestamp,
         sensors: formattedSensors,
-        gps: newData.gps,
     };
 
     const existingIndex = mqttData.value.findIndex(
@@ -134,23 +154,36 @@ function handleMQTTData(newData) {
 }
 
 onMounted(() => {
-    connectMQTT(handleMQTTData); // Singleton connect
+    console.log("Echo object:", window.Echo);
+
+    // Listen untuk event
+    const channel = window.Echo.channel("mqtt-sensor");
+
+    channel.listen(".sensor.updated", (e) => {
+        console.log("✅ Data diterima dari WebSocket:", e);
+        handleMQTTData(e.payload);
+    });
+
+    // Debug channel subscription
+    channel.subscribed(() => {
+        console.log("✅ Successfully subscribed to mqtt-sensor channel");
+    });
 });
 
 onUnmounted(() => {
-    // Hapus semua chart
+    // Bersihkan charts
     charts.forEach(({ chart }) => chart.destroy());
     charts.length = 0;
 
-    // Bersihkan data agar tidak numpuk
     mqttData.value = [];
 
-    // Unregister handler dari singleton
-    removeMQTTHandler(handleMQTTData);
+    // Hentikan listening event
+    window.Echo.leave("mqtt-sensor");
 });
 </script>
 
 <template>
+    <Head title="Monitoring" />
     <div class="bg-gradient-to-b from-blue-200 to-cyan-200">
         <div class="pt-20 w-[90%] mx-auto pb-10 min-h-screen">
             <p class="text-center font-bold text-2xl sm:text-3xl pb-6">

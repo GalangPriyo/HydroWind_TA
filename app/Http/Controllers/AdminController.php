@@ -5,78 +5,56 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\Device;
-use App\Models\Pengguna;
-use App\Models\Whatsapp;
-use App\Models\SensorData;
-use Illuminate\Http\Request;
-use PhpMqtt\Client\MqttClient;
+use App\Models\Battery;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use PhpMqtt\Client\ConnectionSettings;
 
 class AdminController extends Controller
 {
     // Menampilkan Dashboard Admin
     public function dashboard()
     {
+        $totalUsers = User::where('role', 'user')->count();
+        $userWithWhatsapp = User::whereHas('whatsapp')->count();
+
+        $totalDevices = Device::count();
+        $activeDevices = Device::where('status', 'active')->count();
+        $inactiveDevices = Device::where('status', 'inactive')->count();
+        $maintenanceDevices = Device::where('status', 'maintenance')->count();
+
+        $batteryStatuses = Device::with('latestBattery')->get()->map(function ($device) {
+            return [
+                'id' => $device->id,
+                'name' => $device->name,
+                'node_id' => $device->node_id,
+                'level' => $device->latestBattery?->level,
+                'charging' => $device->latestBattery?->charging,
+                'temperature' => $device->latestBattery?->temperature,
+            ];
+        });
+
         return Inertia::render('Admin/AdminDashboard', [
-            'user' => Auth::user()
+            'user' => Auth::user(),
+            'batteryStatuses' => $batteryStatuses,
+            'statsUser' => [
+                'totalUsers' => $totalUsers,
+                'usersWithWhatsapp' => $userWithWhatsapp,
+            ],
+            'statsDevice' => [
+                'totalDevices' => $totalDevices,
+                'activeDevices' => $activeDevices,
+                'inactiveDevices' => $inactiveDevices,
+                'maintenanceDevices' => $maintenanceDevices,
+            ],
         ]);
     }
 
-    public function riwayat()
+    public function battryUpdate()
     {
-        return Inertia::render('Admin/AdminRiwayat', [
-            'user' => Auth::user()
-        ]);
-    }
-
-
-
-
-
-    public function subscribeToMQTT()
-    {
-        $host = 'bac8cead2b4841e8bd7432510d2c80de.s1.eu.hivemq.cloud';
-        $port = 8883; // SSL/TLS port
-        $username = 'mqtt_ta';
-        $password = 'Semangat_45';
-        $clientId = 'laravel-subscriber';
-
-        $connectionSettings = (new ConnectionSettings)
-            ->setUsername($username)
-            ->setPassword($password)
-            ->setUseTls(true);
-
-        $mqtt = new MqttClient($host, $port, $clientId);
-
-        $mqtt->connect($connectionSettings, true);
-
-        $mqtt->subscribe('sensor', function ($topic, $message) {
-            $this->processMQTTMessage($message);
-        }, 1); // QoS 1 untuk jaminan minimal sekali
-
-        $mqtt->loop(true);
-    }
-
-    protected function processMQTTMessage($message)
-    {
-        $data = json_decode($message, true);
-
-        if ($data && isset($data['node_id'], $data['sensors'])) {
-            $device = Device::firstOrCreate(['node_id' => $data['node_id']]);
-
-            foreach ($data['sensors'] as $sensorKey => $sensor) {
-                SensorData::create([
-                    'device_id' => $device->id,
-                    'sensor_type' => $sensor['type'],
-                    'value' => $sensor['value'],
-                    'unit' => $sensor['unit'],
-                    'latitude' => $data['gps']['latitude'] ?? null,
-                    'longitude' => $data['gps']['longitude'] ?? null,
-                    'status' => $data['status'] ?? 'normal',
-                ]);
-            }
+        try {
+            $devices = Device::with('latestBattery')->get();
+            return response()->json($devices);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }

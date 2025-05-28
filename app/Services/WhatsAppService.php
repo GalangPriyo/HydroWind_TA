@@ -2,27 +2,30 @@
 
 namespace App\Services;
 
-use Twilio\Rest\Client;
+use Illuminate\Support\Facades\Http;
 
 class WhatsAppService
 {
-    protected $twilio;
+    protected $token;
 
     public function __construct()
     {
-        $this->twilio = new Client(env('TWILIO_SID'), env('TWILIO_AUTH_TOKEN'));
+        $this->token = env('FONNTE_TOKEN'); // simpan di .env
     }
 
-    public function sendBulkMessages(array $recipients, $message)
+    public function sendMessage(array $targets, string $message)
     {
-        foreach ($recipients as $to) {
-            $this->twilio->messages->create(
-                'whatsapp:' . $to,
-                [
-                    'from' => env('TWILIO_WHATSAPP_FROM'),
-                    'body' => $message,
-                ]
-            );
-        }
+        $targetString = implode(',', $targets); // format: 628xxxx,628yyyy
+
+        $response = Http::asForm()->withHeaders([
+            'Authorization' => $this->token
+        ])->post('https://api.fonnte.com/send', [
+            'target' => $targetString,
+            'message' => $message,
+            'delay' => 1,
+            'countryCode' => '62',
+        ]);
+
+        return $response->json();
     }
 }

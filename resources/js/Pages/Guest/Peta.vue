@@ -1,11 +1,11 @@
 <script setup>
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import { onMounted, onBeforeUnmount } from "vue";
-import { usePage } from "@inertiajs/vue3";
+import { usePage, Head } from "@inertiajs/vue3";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { connectMQTT, removeMQTTHandler } from "@/mqtt/mqttClient";
+import { connectMQTT, removeMQTTHandler } from "@/mqtt";
 
 defineOptions({ layout: GuestLayout });
 
@@ -126,6 +126,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+    <Head title="Peta" />
     <div class="min-h-screen bg-gradient-to-b from-blue-200 to-cyan-200">
         <p class="text-center font-bold text-2xl sm:text-3xl pb-6 pt-20">
             Peta Lokasi Penempatan Alat

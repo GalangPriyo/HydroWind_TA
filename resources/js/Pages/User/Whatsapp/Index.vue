@@ -1,5 +1,5 @@
 <script setup>
-import { Link, router } from "@inertiajs/vue3";
+import { Link, router, Head } from "@inertiajs/vue3";
 import Swal from "sweetalert2";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 
@@ -29,50 +29,86 @@ const confirmDelete = () => {
 </script>
 
 <template>
-    <div class="bg-base200 flex flex-col items-center">
+    <Head title="WhatsApp" />
+    <div class="flex justify-center py-8">
         <div
-            class="card w-1/2 max-w-5xl bg-gradient-to-b from-blue-200 to-cyan-200 shadow-xl"
+            class="flex flex-col md:flex-row gap-6 w-full max-w-7xl items-stretch"
         >
-            <div class="card-body items-center text-center">
-                <img
-                    src="/assets/media/index-wa.png"
-                    alt="Nomor WhatsApp"
-                    class="w-1/2"
-                />
-                <h1 class="text-xl font-bold">Nomor WhatsApp Terdaftar</h1>
-                <div v-if="whatsapp" class="w-full">
-                    <p class="text-xl text-gray-700 mb-5 py-1">
-                        <i class="fa-brands fa-whatsapp"></i>
-                        {{ whatsapp.phone_number }}
-                    </p>
-                    <div
-                        class="flex flex-col sm:flex-row gap-4 justify-center mt-2"
-                    >
+            <!-- Card WhatsApp User -->
+            <div class="card w-full md:w-2/5 bg-white shadow-xl">
+                <div
+                    class="card-body justify-center items-center text-center p-4"
+                >
+                    <img
+                        src="/assets/media/index-wa.png"
+                        alt="Nomor WhatsApp"
+                        class="w-1/2 mb-2"
+                    />
+                    <h2 class="text-xl font-bold">Nomor WhatsApp Terdaftar</h2>
+
+                    <div v-if="whatsapp" class="w-full">
+                        <p class="text-lg text-gray-700 mb-3 py-1">
+                            <i class="fa-brands fa-whatsapp"></i>
+                            {{ whatsapp.phone_number }}
+                        </p>
+                        <div
+                            class="flex flex-col sm:flex-row gap-3 justify-center mt-2"
+                        >
+                            <Link
+                                :href="route('user.whatsapp.edit')"
+                                class="px-3 py-2 bg-blue-600 text-white rounded-md w-full sm:w-32 text-center text-sm"
+                                >Edit</Link
+                            >
+                            <button
+                                @click="confirmDelete"
+                                class="px-3 py-2 bg-red-600 text-white rounded-md w-full sm:w-32 text-center text-sm"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-else class="w-full">
+                        <p class="text-red-500 mb-3 py-1 text-sm">
+                            Anda belum mendaftarkan nomor WhatsApp.
+                        </p>
                         <Link
-                            :href="route('user.whatsapp.edit')"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md w-full sm:w-36 text-center text-sm"
+                            :href="route('user.whatsapp.create')"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md w-full sm:w-64 text-center text-sm"
                         >
-                            Edit
+                            Tambah Nomor WhatsApp
                         </Link>
-                        <button
-                            @click="confirmDelete"
-                            class="px-4 py-2 bg-red-600 text-white rounded-md w-full sm:w-36 text-center text-sm"
-                        >
-                            Hapus
-                        </button>
                     </div>
                 </div>
+            </div>
 
-                <div v-else class="w-full">
-                    <p class="text-red-500 mb-5 py-2">
-                        Anda belum menambahkan nomor WhatsApp.
-                    </p>
-                    <Link
-                        :href="route('user.whatsapp.create')"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md w-full sm:w-64 text-center text-sm"
-                    >
-                        Tambah Nomor WhatsApp
-                    </Link>
+            <!-- Kanan: Stack 2 card vertikal -->
+            <div class="flex flex-col gap-6 w-full md:w-3/5">
+                <!-- Komunitas Hydrowind -->
+                <div
+                    class="card bg-gradient-to-b from-sky-200 to-blue-300 shadow-xl flex-row items-center p-4"
+                >
+                    <div class="w-2/3 px-4">
+                        <h1 class="text-xl font-bold">Komunitas Hydrowind</h1>
+                        <p class="text-gray-700 py-3 text-sm">
+                            Bergabung dalam komunitas pengguna Hydrowind untuk
+                            diskusi & sharing pengalaman.
+                        </p>
+                        <a
+                            href="https://chat.whatsapp.com/I2N74ilIQdbJtZCsnk1HeW"
+                            target="_blank"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition block w-max"
+                        >
+                            Komunitas WhatsApp Hydrowind
+                        </a>
+                    </div>
+                    <div class="w-1/3 pr-4">
+                        <img
+                            src="/assets/media/komunitas.png"
+                            alt="Komunitas Hydrowind"
+                            class="w-full object-contain"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
