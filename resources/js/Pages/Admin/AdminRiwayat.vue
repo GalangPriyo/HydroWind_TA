@@ -2,6 +2,7 @@
 import { Head, router } from "@inertiajs/vue3";
 import { ref, computed, onMounted, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import Swal from "sweetalert2";
 
 defineOptions({ layout: AuthenticatedLayout });
 
@@ -266,6 +267,38 @@ onMounted(() => {
         }
     }
 });
+
+const confirmTruncate = () => {
+    Swal.fire({
+        title: "Apakah Anda yakin?",
+        text: "Seluruh data sensor akan dihapus permanen!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#aaa",
+        confirmButtonText: "Ya, hapus semua!",
+        cancelButtonText: "Batal",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route("admin.riwayat.truncate"), {
+                onSuccess: () => {
+                    Swal.fire(
+                        "Terhapus!",
+                        "Data sensor berhasil dihapus.",
+                        "success"
+                    );
+                },
+                onError: () => {
+                    Swal.fire(
+                        "Gagal",
+                        "Terjadi kesalahan saat menghapus data.",
+                        "error"
+                    );
+                },
+            });
+        }
+    });
+};
 </script>
 
 <template>
@@ -296,6 +329,12 @@ onMounted(() => {
                         >
                             <i class="fa-solid fa-download"></i> Download Data
                         </a>
+                        <button
+                            @click="confirmTruncate"
+                            class="btn border-2 border-gray-200 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700 transition-all duration-200 font-medium"
+                        >
+                            <i class="fa-solid fa-trash-can"></i> Hapus Data
+                        </button>
                     </div>
                 </div>
             </div>
@@ -391,7 +430,7 @@ onMounted(() => {
                                 <button
                                     type="button"
                                     @click="resetFilter"
-                                    class="btn btn-sm bg-red-600 hover:bg-red-700 text-white rounded-lg w-1/2"
+                                    class="btn btn-sm bg-white hover:bg-red-500 border border-red-500 rounded-lg w-1/2 text-red-500 hover:text-white transition-colors"
                                 >
                                     <i
                                         class="fa-solid fa-arrow-rotate-left"
@@ -535,6 +574,9 @@ onMounted(() => {
                 v-else
                 class="text-center py-16 bg-white rounded-2xl shadow-xl border border-gray-100"
             >
+                <i
+                    class="fas fa-exclamation-triangle text-6xl text-gray-500 mb-2"
+                ></i>
                 <p class="text-gray-500">Tidak ada data yang ditemukan</p>
             </div>
         </div>

@@ -1,18 +1,29 @@
 <script setup>
 import { Head, Link, router } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import Swal from "sweetalert2";
 
 defineOptions({ layout: AuthenticatedLayout });
-
 defineProps({
     user: Object, // User yang sedang login
     whatsapp: Object,
 });
 
 const confirmDelete = () => {
-    if (confirm("Apakah Anda yakin ingin menghapus nomor WhatsApp ini?")) {
-        router.delete(route("user.whatsapp.destroy"));
-    }
+    Swal.fire({
+        title: "Hapus Nomor WhatsApp?",
+        text: "Tindakan ini akan menghapus nomor WhatsApp yang Anda daftarkan.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Hapus",
+        cancelButtonText: "Batal",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.delete(route("user.whatsapp.delete"));
+        }
+    });
 };
 </script>
 
@@ -55,126 +66,118 @@ const confirmDelete = () => {
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
             <!-- WhatsApp Management Card -->
-            <div
-                class="xl:col-span-2 bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300"
-            >
-                <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-6">
-                    <div class="flex items-center space-x-4">
-                        <div
-                            class="w-14 h-14 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm"
-                        >
-                            <i class="fab fa-whatsapp text-white text-2xl"></i>
-                        </div>
+            <div class="xl:col-span-2">
+                <div
+                    class="bg-white px-5 py-3 border-b border-gray-200 rounded-t-xl shadow-lg transition-all duration-300"
+                >
+                    <div class="flex items-center space-x-3">
+                        <i class="fab fa-whatsapp text-2xl"></i>
                         <div>
-                            <h2 class="text-2xl font-bold text-white">
-                                Nomor WhatsApp
-                            </h2>
-                            <p class="text-blue-100">
+                            <p class="font-medium">
                                 Kelola nomor WhatsApp Anda
                             </p>
                         </div>
                     </div>
                 </div>
 
-                <div class="p-8">
-                    <div v-if="whatsapp" class="space-y-6">
+                <div
+                    class="px-8 pb-8 pt-4 space-y-6 bg-white rounded-b-xl shadow-lg"
+                >
+                    <div v-if="whatsapp" class="space-y-4">
                         <!-- Current WhatsApp Number -->
-                        <div
-                            class="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200"
-                        >
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-4">
+                        <div>
+                            <h3
+                                class="text-sm text-green-600 mb-2 flex items-center"
+                            >
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Anda telah mendaftarkan nomor WhatsApp
+                            </h3>
+
+                            <!-- Card -->
+                            <div
+                                class="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-4 shadow-sm"
+                            >
+                                <div
+                                    class="flex flex-col sm:flex-row sm:items-center sm:space-x-4"
+                                >
+                                    <!-- Icon -->
                                     <div
-                                        class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center"
+                                        class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center shadow-inner mx-auto sm:mx-0"
                                     >
                                         <i
-                                            class="fas fa-phone text-green-600 text-xl"
+                                            class="fas fa-phone text-blue-600 text-2xl"
                                         ></i>
                                     </div>
-                                    <div>
+                                    <!-- Text -->
+                                    <div
+                                        class="text-center sm:text-left mt-3 sm:mt-0"
+                                    >
                                         <p
-                                            class="text-sm font-medium text-gray-600 mb-1"
+                                            class="text-sm font-medium text-gray-500"
                                         >
                                             Nomor Terdaftar
                                         </p>
                                         <p
-                                            class="text-2xl font-bold text-gray-900"
+                                            class="text-xl sm:text-2xl font-bold text-gray-900 tracking-wide"
                                         >
                                             {{ whatsapp.phone_number }}
                                         </p>
-                                        <p
-                                            class="text-sm text-green-600 flex items-center gap-1 mt-1"
-                                        >
-                                            <i class="fas fa-check-circle"></i>
-                                            Terverifikasi
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="hidden sm:block">
-                                    <div
-                                        class="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center"
-                                    >
-                                        <i
-                                            class="fas fa-check text-white text-2xl"
-                                        ></i>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Action Buttons -->
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <Link
-                                :href="route('user.whatsapp.edit')"
-                                class="flex-1 group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl p-4 text-center font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                            <!-- Keterangan -->
+                            <p
+                                class="text-gray-600 my-3 max-w-md text-center sm:text-left"
                             >
-                                <div
-                                    class="flex items-center justify-center gap-3"
-                                >
-                                    <i
-                                        class="fas fa-edit text-lg group-hover:rotate-12 transition-transform"
-                                    ></i>
-                                    <span>Edit Nomor</span>
-                                </div>
-                            </Link>
-                            <button
-                                @click="confirmDelete"
-                                class="flex-1 group bg-red-50 hover:bg-red-100 text-red-600 border-2 border-red-200 hover:border-red-300 rounded-2xl p-4 font-semibold transition-all duration-300 transform hover:scale-105"
+                                Untuk mengubah atau menghapus nomor WhatsApp
+                                terdaftar, gunakan tombol di bawah.
+                            </p>
+
+                            <!-- Tombol Aksi -->
+                            <div
+                                class="flex flex-col sm:flex-row justify-center sm:justify-end gap-3"
                             >
-                                <div
-                                    class="flex items-center justify-center gap-3"
+                                <Link
+                                    :href="route('user.whatsapp.edit')"
+                                    class="text-center px-4 py-2 bg-amber-400 text-white text-sm rounded-lg hover:bg-amber-500 transition-colors font-medium tooltip"
+                                    data-tip="Edit"
                                 >
-                                    <i
-                                        class="fas fa-trash text-lg group-hover:rotate-12 transition-transform"
-                                    ></i>
-                                    <span>Hapus Nomor</span>
-                                </div>
-                            </button>
+                                    <i class="fas fa-edit"></i>
+                                </Link>
+                                <button
+                                    @click="confirmDelete"
+                                    class="text-center px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors font-medium tooltip"
+                                    data-tip="Hapus"
+                                >
+                                    <i class="fas fa-trash-can"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div v-else class="space-y-6 text-center">
                         <!-- Empty State -->
-                        <div class="py-12">
+                        <div class="py-6">
                             <div
                                 class="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-6"
                             >
                                 <i
-                                    class="fab fa-whatsapp text-gray-400 text-4xl"
+                                    class="fa-solid fa-phone-slash text-gray-400 text-4xl"
                                 ></i>
                             </div>
                             <h3 class="text-xl font-bold text-gray-900 mb-2">
                                 Belum Ada Nomor WhatsApp
                             </h3>
-                            <p class="text-gray-600 mb-8 max-w-md mx-auto">
+                            <p class="text-gray-600 mb-6 max-w-md">
                                 Daftarkan nomor WhatsApp Anda untuk mendapatkan
-                                notifikasi dan update terbaru dari Hydrowind.
+                                notifikasi peringatan bencana dari Hydrowind.
                             </p>
                             <Link
                                 :href="route('user.whatsapp.create')"
-                                class="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl px-8 py-4 font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                                class="inline-flex items-center text-sm gap-3 bg-green-600 hover:bg-green-700 font-semibold text-white rounded-lg px-4 py-2 transition-all duration-300 transform hover:shadow-lg"
                             >
-                                <i class="fas fa-plus text-lg"></i>
+                                <i class="fas fa-plus"></i>
                                 <span>Tambah Nomor WhatsApp</span>
                             </Link>
                         </div>
@@ -183,71 +186,78 @@ const confirmDelete = () => {
             </div>
 
             <!-- Community Card -->
-            <div
-                class="xl:col-span-3 bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300"
-            >
-                <div class="bg-gradient-to-br from-green-500 to-teal-600 p-6">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div
-                            class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm"
-                        >
-                            <i class="fas fa-users text-white text-xl"></i>
+            <div class="xl:col-span-3">
+                <div
+                    class="bg-white px-5 py-3 border-b border-gray-200 rounded-t-xl shadow-lg transition-all duration-300"
+                >
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-users-viewfinder text-2xl"></i>
+
+                        <div>
+                            <p class="font-medium">
+                                Grup WhatsApp Komunitas Hydrowind
+                            </p>
                         </div>
-                        <h2 class="text-xl font-bold text-white">Komunitas</h2>
                     </div>
-                    <p class="text-green-100 text-sm">
-                        Bergabung dengan komunitas pengguna Hydrowind
-                    </p>
                 </div>
 
-                <div class="p-6 space-y-6">
-                    <div class="text-center">
-                        <img
-                            src="/assets/media/komunitas.png"
-                            alt="Komunitas Hydrowind"
-                            class="w-32 h-32 object-contain mx-auto mb-4 rounded-2xl"
-                        />
-                        <h3 class="text-lg font-bold text-gray-900 mb-2">
-                            Komunitas WhatsApp
-                        </h3>
-                        <p class="text-gray-600 text-sm mb-6">
-                            Diskusi, sharing pengalaman, dan dapatkan tips
-                            terbaru dari komunitas pengguna Hydrowind.
-                        </p>
-                    </div>
-
+                <div
+                    class="px-8 pb-6 pt-4 space-y-6 bg-white rounded-b-xl shadow-lg"
+                >
                     <div class="space-y-4">
-                        <div
-                            class="flex items-center gap-3 text-sm text-gray-600"
-                        >
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Diskusi & Sharing Pengalaman</span>
-                        </div>
-                        <div
-                            class="flex items-center gap-3 text-sm text-gray-600"
-                        >
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Tips & Trik Penggunaan</span>
-                        </div>
-                        <div
-                            class="flex items-center gap-3 text-sm text-gray-600"
-                        >
-                            <i class="fas fa-check text-green-500"></i>
-                            <span>Update Terbaru</span>
+                        <!-- Current WhatsApp Number -->
+                        <div>
+                            <div
+                                class="flex flex-col md:flex-row items-center gap-6"
+                            >
+                                <!-- Teks dan Tombol -->
+                                <div class="md:flex-[3] w-full">
+                                    <div
+                                        class="flex justify-center mb-4 md:mb-0"
+                                    >
+                                        <img
+                                            src="/assets/media/komunitas.png"
+                                            alt="Komunitas Hydrowind"
+                                            class="block md:hidden w-1/2 object-contain"
+                                        />
+                                    </div>
+                                    <p
+                                        class="text-gray-700 mb-4 md:mb-8 text-center md:text-left"
+                                    >
+                                        Bergabung dalam Grup Whatsapp Komunitas
+                                        Hydrowind untuk mendapatkan informasi
+                                        peringatan bencana secara aktual yang
+                                        terjadi di Desa Gebangan.
+                                    </p>
+                                    <div
+                                        class="flex justify-center md:justify-start"
+                                    >
+                                        <a
+                                            href="https://chat.whatsapp.com/I2N74ilIQdbJtZCsnk1HeW"
+                                            target="_blank"
+                                            class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg text-sm hover:bg-blue-700 transition w-max"
+                                        >
+                                            <i
+                                                class="fa-solid fa-link mr-1"
+                                            ></i>
+                                            Grup WhatsApp Hydrowind
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Gambar -->
+                                <div
+                                    class="md:flex-[2] w-full max-w-[200px] md:max-w-none"
+                                >
+                                    <img
+                                        src="/assets/media/komunitas.png"
+                                        alt="Komunitas Hydrowind"
+                                        class="hidden md:block w-full object-contain"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <a
-                        href="https://chat.whatsapp.com/I2N74ilIQdbJtZCsnk1HeW"
-                        target="_blank"
-                        class="block w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-2xl p-4 text-center font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-                    >
-                        <div class="flex items-center justify-center gap-3">
-                            <i class="fab fa-whatsapp text-lg"></i>
-                            <span>Gabung Sekarang</span>
-                            <i class="fas fa-external-link-alt text-sm"></i>
-                        </div>
-                    </a>
                 </div>
             </div>
         </div>
@@ -287,7 +297,7 @@ const confirmDelete = () => {
 /* Custom hover effects */
 .group:hover .fas,
 .group:hover .fab {
-    transform: scale(1.1);
+    transform: scale(1);
     transition: transform 0.3s ease;
 }
 

@@ -1,14 +1,29 @@
 <script setup>
-import { Link } from "@inertiajs/vue3";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
+import { Link, usePage } from "@inertiajs/vue3";
 
-// State
+const isScrolled = ref(false);
 const darkMode = ref(localStorage.getItem("theme") === "dark");
-const isMinimized = ref(false);
-const time = ref("");
-const day = ref("");
+const isMenuOpen = ref(false);
+const user = computed(() => usePage().props.auth.user);
 
-// Fungsi Toggle Tema
+const handleScroll = () => {
+    isScrolled.value = window.scrollY > 50;
+};
+
+onMounted(() => {
+    window.addEventListener("scroll", handleScroll);
+    // Set initial theme
+    document.documentElement.setAttribute(
+        "data-theme",
+        darkMode.value ? "dark" : "light"
+    );
+});
+
+onUnmounted(() => {
+    window.removeEventListener("scroll", handleScroll);
+});
+
 const toggleTheme = () => {
     darkMode.value = !darkMode.value;
     localStorage.setItem("theme", darkMode.value ? "dark" : "light");
@@ -18,205 +33,250 @@ const toggleTheme = () => {
     );
 };
 
-// Fungsi Toggle Sidebar
-const toggleSidebar = () => {
-    isMinimized.value = !isMinimized.value;
+// Close mobile menu when clicking outside
+const closeMenuOnClickOutside = (event) => {
+    if (isMenuOpen.value && !event.target.closest(".dropdown")) {
+        isMenuOpen.value = false;
+    }
 };
 
-// Fungsi untuk Memperbarui Waktu
-const updateTime = () => {
-    const now = new Date();
-    const days = [
-        "Minggu",
-        "Senin",
-        "Selasa",
-        "Rabu",
-        "Kamis",
-        "Jumat",
-        "Sabtu",
-    ];
-    const months = [
-        "Januari",
-        "Februari",
-        "Maret",
-        "April",
-        "Mei",
-        "Juni",
-        "Juli",
-        "Agustus",
-        "September",
-        "Oktober",
-        "November",
-        "Desember",
-    ];
-
-    day.value = `${days[now.getDay()]}, ${now.getDate()} ${
-        months[now.getMonth()]
-    } ${now.getFullYear()}`;
-    time.value = now
-        .toLocaleTimeString("id-ID", { hour12: false })
-        .replace(/\./g, ":");
-};
-
-// Ambil data pengguna dari Props
-const props = defineProps({
-    user: Object,
-});
-
-// Lifecycle Hooks
 onMounted(() => {
-    updateTime();
-    setInterval(updateTime, 1000);
-    document.documentElement.setAttribute(
-        "data-theme",
-        darkMode.value ? "dark" : "light"
-    );
+    document.addEventListener("click", closeMenuOnClickOutside);
 });
 
-// Menu Sidebar
-const menuItems = ref([
-    { name: "Dashboard", link: "/user/dashboard", icon: "fa-house" },
-    { name: "Akun", link: "/user/akun", icon: "fa-user" },
-    { name: "Riwayat", link: "/user/history", icon: "fa-database" },
-    {
-        name: "Logout",
-        link: "/logout",
-        icon: "fa-right-from-bracket text-red-500",
-        method: "post",
-    },
-]);
+onUnmounted(() => {
+    document.removeEventListener("click", closeMenuOnClickOutside);
+});
 </script>
 
 <template>
-    <div class="flex h-screen bg-base-300">
-        <!-- Sidebar -->
-        <aside
+    <div class="min-h-screen flex flex-col">
+        <!-- Navbar -->
+        <nav
             :class="[
-                'bg-base-100 min-h-screen transition-all duration-300 p-4 flex flex-col items-start',
-                isMinimized ? 'w-20' : 'w-64',
+                'fixed w-full top-0 left-0 z-50 transition-all duration-300',
+                isScrolled
+                    ? 'bg-base-100 shadow-md'
+                    : 'bg-opacity-90 bg-base-100 shadow-sm backdrop-blur-sm',
             ]"
         >
-            <!-- Logo & Toggle Sidebar -->
             <div
-                @click="toggleSidebar"
-                class="flex items-center cursor-pointer"
+                class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
             >
-                <img
-                    src="/assets/media/HydroWind.jpeg"
-                    alt="Logo"
-                    class="w-12 h-12 rounded-full transition-all"
-                    :class="{ 'mr-0': isMinimized, 'mr-2': !isMinimized }"
-                />
-                <h2
-                    class="text-xl font-bold transition-all"
-                    :class="{
-                        'opacity-0 w-0': isMinimized,
-                        'opacity-100 w-auto': !isMinimized,
-                    }"
-                >
-                    HydroWind
-                </h2>
-            </div>
-
-            <!-- Menu Navigasi -->
-            <nav class="mt-4 space-y-2 w-full">
-                <Link
-                    v-for="item in menuItems"
-                    :key="item.name"
-                    :href="item.link"
-                    :method="item.method || 'get'"
-                    :as="item.method === 'post' ? 'button' : 'a'"
-                    class="flex items-center p-2 rounded hover:bg-base-200 transition-all min-w-[150px]"
-                >
-                    <i
-                        :class="`fa-solid ${item.icon} w-6 text-lg text-center`"
-                    ></i>
-                    <span
-                        class="ml-3 transition-all whitespace-nowrap"
-                        :class="{
-                            'opacity-0 w-0 overflow-hidden': isMinimized,
-                            'opacity-100 w-auto': !isMinimized,
-                            'text-red-500': item.name === 'Logout',
-                        }"
+                <!-- Logo -->
+                <Link href="/" class="flex items-center">
+                    <img
+                        src="/assets/media/HydroWind.jpeg"
+                        alt="HydroWind Logo"
+                        class="w-10 h-10 rounded-full"
+                    />
+                    <span class="text-lg font-bold ml-2 hidden sm:inline"
+                        >HydroWind</span
                     >
-                        {{ item.name }}
-                    </span>
                 </Link>
-            </nav>
-        </aside>
 
-        <!-- Konten Utama -->
-        <div class="flex-1 flex flex-col">
-            <!-- Navbar -->
-            <nav class="bg-base-100 p-4 flex justify-between items-center">
-                <!-- Kiri: Tanggal & Waktu -->
-                <div class="flex items-center gap-4 text-md">
-                    <span
-                        ><i class="fa-regular fa-calendar mr-1"></i> {{ day }}
-                        <i class="fa-regular fa-clock ml-2"></i>
-                        {{ time }}</span
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center space-x-6">
+                    <Link
+                        href="/"
+                        class="px-3 py-2 hover:text-primary transition-colors"
+                        >Home</Link
                     >
+                    <Link
+                        href="/monitoring"
+                        class="px-3 py-2 hover:text-primary transition-colors"
+                        >Monitoring</Link
+                    >
+                    <Link
+                        href="/peta"
+                        class="px-3 py-2 hover:text-primary transition-colors"
+                        >Peta</Link
+                    >
+                    <Link
+                        href="/panduan"
+                        class="px-3 py-2 hover:text-primary transition-colors"
+                        >Panduan</Link
+                    >
+
+                    <!-- User Authentication Desktop -->
+                    <template v-if="user">
+                        <div class="dropdown dropdown-end">
+                            <button
+                                tabindex="0"
+                                class="p-1 rounded-full hover:bg-base-300 transition-all flex items-center"
+                            >
+                                <div
+                                    class="w-9 h-9 rounded-full overflow-hidden border-2 border-transparent hover:border-primary"
+                                >
+                                    <img
+                                        src="/assets/media/profil.jpg"
+                                        alt="Profil"
+                                        class="w-full h-full object-cover"
+                                    />
+                                </div>
+                            </button>
+                            <ul
+                                tabindex="0"
+                                class="mt-3 z-10 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
+                            >
+                                <li>
+                                    <Link
+                                        :href="
+                                            user.role === 'admin'
+                                                ? '/admin/dashboard'
+                                                : '/user/dashboard'
+                                        "
+                                        class="block px-4 py-2 hover:bg-base-200 rounded"
+                                        >Dashboard</Link
+                                    >
+                                </li>
+                                <li>
+                                    <Link
+                                        href="/profile"
+                                        class="block px-4 py-2 hover:bg-base-200 rounded"
+                                        >Profil</Link
+                                    >
+                                </li>
+                                <li>
+                                    <Link
+                                        href="/logout"
+                                        method="post"
+                                        as="button"
+                                        class="block px-4 py-2 text-error hover:bg-error hover:text-error-content rounded"
+                                        >Logout</Link
+                                    >
+                                </li>
+                            </ul>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="flex items-center space-x-3">
+                            <Link
+                                href="/login"
+                                class="px-4 py-2 border border-primary text-sm text-primary rounded-full hover:bg-primary hover:text-primary-content transition-colors"
+                                >Login</Link
+                            >
+                            <Link
+                                href="/register"
+                                class="px-4 py-2 bg-primary text-sm text-primary-content rounded-full hover:bg-primary-focus transition-colors"
+                                >Register</Link
+                            >
+                        </div>
+                    </template>
                 </div>
 
-                <!-- Kanan: Tema, Nama Akun, & Profil -->
-                <div class="flex items-center gap-2">
-                    <!-- Toggle Tema -->
-                    <button @click="toggleTheme" class="btn btn-sm btn-ghost">
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden flex items-center space-x-4">
+                    <button
+                        @click.stop="isMenuOpen = !isMenuOpen"
+                        class="p-2 rounded-full hover:bg-base-300 transition-colors"
+                        aria-label="Toggle menu"
+                    >
                         <i
-                            :class="
-                                darkMode
-                                    ? 'fa-regular fa-moon text-xl'
-                                    : 'fa-regular fa-sun text-xl'
-                            "
+                            :class="[
+                                'text-xl',
+                                isMenuOpen
+                                    ? 'fa-solid fa-xmark'
+                                    : 'fa-solid fa-bars',
+                            ]"
                         ></i>
                     </button>
+                </div>
+            </div>
 
-                    <!-- Nama Akun -->
-                    <span class="text-md">{{ props.user.name }}</span>
+            <!-- Mobile Menu -->
+            <div
+                v-if="isMenuOpen"
+                class="lg:hidden bg-base-100 shadow-lg"
+                @click.stop
+            >
+                <div class="container mx-auto px-4 py-3">
+                    <ul class="space-y-2">
+                        <li>
+                            <Link
+                                href="/"
+                                class="block px-4 py-3 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Home</Link
+                            >
+                        </li>
+                        <li>
+                            <Link
+                                href="/monitoring"
+                                class="block px-4 py-3 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Monitoring</Link
+                            >
+                        </li>
+                        <li>
+                            <Link
+                                href="/peta"
+                                class="block px-4 py-3 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Peta</Link
+                            >
+                        </li>
+                        <li>
+                            <Link
+                                href="/panduan"
+                                class="block px-4 py-3 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Panduan</Link
+                            >
+                        </li>
+                    </ul>
 
-                    <!-- Dropdown Profil -->
-                    <div class="dropdown dropdown-end">
-                        <button
-                            tabindex="0"
-                            class="p-1 rounded hover:bg-base-300 transition-all flex items-center"
-                        >
-                            <div class="w-10 h-10 rounded overflow-hidden">
-                                <img
-                                    src="/assets/media/profil.jpg"
-                                    alt="Profil"
-                                    class="w-full h-full object-cover"
-                                />
+                    <div class="mt-4 pt-4 border-t border-base-300">
+                        <template v-if="user">
+                            <Link
+                                :href="
+                                    user.role === 'admin'
+                                        ? '/admin/dashboard'
+                                        : '/user/dashboard'
+                                "
+                                class="block px-4 py-3 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Dashboard</Link
+                            >
+                            <Link
+                                href="/profile"
+                                class="block px-4 py-3 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Profil</Link
+                            >
+                            <Link
+                                href="/logout"
+                                method="post"
+                                as="button"
+                                class="block px-4 py-3 text-error hover:bg-error hover:text-error-content rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Logout</Link
+                            >
+                        </template>
+                        <template v-else>
+                            <div class="flex flex-col space-y-3 mt-2">
+                                <Link
+                                    href="/login"
+                                    class="w-full text-center px-4 py-3 border border-primary text-primary rounded-full hover:bg-primary hover:text-primary-content transition-colors"
+                                    @click="isMenuOpen = false"
+                                    >Login</Link
+                                >
+                                <Link
+                                    href="/register"
+                                    class="w-full text-center px-4 py-3 bg-primary text-primary-content rounded-full hover:bg-primary-focus transition-colors"
+                                    @click="isMenuOpen = false"
+                                    >Register</Link
+                                >
                             </div>
-                        </button>
-                        <ul
-                            tabindex="0"
-                            class="mt-3 z-10 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-40"
-                        >
-                            <li>
-                                <Link
-                                    href="/profile"
-                                    class="block px-4 py-2 hover:bg-base-200"
-                                    >Profil</Link
-                                >
-                            </li>
-                            <li>
-                                <Link
-                                    href="/logout"
-                                    method="post"
-                                    as="button"
-                                    class="block px-4 py-2 text-red-500 hover:bg-red-100"
-                                    >Logout</Link
-                                >
-                            </li>
-                        </ul>
+                        </template>
                     </div>
                 </div>
-            </nav>
+            </div>
+        </nav>
 
-            <!-- Konten Halaman -->
-            <main class="p-6 flex-1 overflow-auto">
-                <slot />
-            </main>
-        </div>
+        <!-- Content -->
+        <main class="flex-grow pt-16">
+            <slot />
+        </main>
     </div>
 </template>

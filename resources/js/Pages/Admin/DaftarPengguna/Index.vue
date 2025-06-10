@@ -114,7 +114,7 @@ const formatDate = (dateString) => {
                                 <button
                                     @click="viewMode = 'grid'"
                                     :class="[
-                                        'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                                        'px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm font-medium transition-all duration-200',
                                         viewMode === 'grid'
                                             ? 'bg-blue-600 text-white shadow-sm'
                                             : 'text-gray-600 hover:text-gray-800',
@@ -122,40 +122,52 @@ const formatDate = (dateString) => {
                                 >
                                     <span
                                         ><i
-                                            class="fa-solid fa-table-cells-large"
+                                            class="fa-solid fa-table-cells-large text-sm sm:text-base"
                                         ></i
                                     ></span>
                                 </button>
                                 <button
                                     @click="viewMode = 'table'"
                                     :class="[
-                                        'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                                        'px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-sm font-medium transition-all duration-200',
                                         viewMode === 'table'
                                             ? 'bg-blue-600 text-white shadow-sm'
                                             : 'text-gray-600 hover:text-gray-800',
                                     ]"
                                 >
                                     <span
-                                        ><i class="fa-solid fa-bars"></i
+                                        ><i
+                                            class="fa-solid fa-bars text-sm sm:text-base"
+                                        ></i
                                     ></span>
                                 </button>
                             </div>
 
                             <Link
                                 :href="route('admin.pengguna.create')"
-                                class="btn border-2 border-gray-200 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium"
+                                class="btn border-2 border-gray-200 bg-blue-600 text-white text-xs sm:text-sm rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium px-3 py-1 sm:px-4 sm:py-2"
                             >
                                 <span
-                                    ><i class="fa-solid fa-user-plus"></i
+                                    ><i
+                                        class="fa-solid fa-user-plus text-sm sm:text-base"
+                                    ></i
                                 ></span>
-                                Tambah Pengguna
+                                <span class="hidden md:inline ml-1"
+                                    >Tambah Pengguna</span
+                                >
+                                <span class="md:hidden">Tambah</span>
                             </Link>
                             <a
                                 :href="route('admin.pengguna.download')"
-                                class="btn border-2 border-gray-200 bg-green-600 text-white text-sm rounded-xl hover:bg-green-700 transition-all duration-200 font-medium"
+                                class="btn border-2 border-gray-200 bg-green-600 text-white text-xs sm:text-sm rounded-xl hover:bg-green-700 transition-all duration-200 font-medium px-3 py-1 sm:px-4 sm:py-2"
                             >
-                                <i class="fa-solid fa-download"></i> Download
-                                Data
+                                <i
+                                    class="fa-solid fa-download text-sm sm:text-base"
+                                ></i>
+                                <span class="hidden md:inline ml-1"
+                                    >Download Data</span
+                                >
+                                <span class="md:hidden">Download</span>
                             </a>
                         </div>
                     </div>

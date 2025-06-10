@@ -295,4 +295,11 @@ class RiwayatController extends Controller
 
         return $units[$sensorType] ?? '';
     }
+
+    public function truncateRiwayat()
+    {
+        DB::table('sensor_datas')->truncate();
+
+        return redirect()->back()->with('success', 'Data berhasil dihapus.');
+    }
 }

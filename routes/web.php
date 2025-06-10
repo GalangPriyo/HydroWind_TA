@@ -26,7 +26,7 @@ Route::middleware(['auth', 'verified', 'user'])->group(function () {
     Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
 
     //Whastapp
-    Route::get('/user/whatsapp', [WhatsappController::class, 'indexWhatsapp'])->name('user.whatsapp');
+    // Route::get('/user/whatsapp', [WhatsappController::class, 'indexWhatsapp'])->name('user.whatsapp');
     Route::get('/user/whatsapp/add', [WhatsappController::class, 'createWhatsapp'])->name('user.whatsapp.create');
     Route::post('/user/whatsapp/add', [WhatsappController::class, 'storeWhatsapp'])->name('user.whatsapp.store');
     Route::get('/user/whatsapp/edit', [WhatsappController::class, 'editWhatsapp'])->name('user.whatsapp.edit');
@@ -63,6 +63,7 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     //Riwayat
     Route::get('/admin/riwayat', [RiwayatController::class, 'indexRiwayat'])->name('admin.riwayat');
     Route::get('/admin/riwayat/download', [RiwayatController::class, 'downloadRiwayat'])->name('admin.riwayat.download');
+    Route::delete('/admin/riwayat/truncate', [RiwayatController::class, 'truncateRiwayat'])->name('admin.riwayat.truncate');
 });
 
 
@@ -79,7 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/', [GuestController::class, 'home'])->name('home');
 Route::get('/panduan', [GuestController::class, 'panduan'])->name('panduan');
 Route::get('/monitoring', [GuestController::class, 'monitoring'])->name('monitoring');
-Route::get('/peta', [GuestController::class, 'showMap'])->name('guest.peta');
+Route::get('/peta', [GuestController::class, 'map'])->name('guest.peta');
 
 
 Route::post('/mqtt/sensor-data', [GuestController::class, 'store']);

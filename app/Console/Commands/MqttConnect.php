@@ -4,11 +4,14 @@ namespace App\Console\Commands;
 
 use PhpMqtt\Client\MqttClient;
 use Illuminate\Console\Command;
+use App\Services\WhatsAppService;
+use App\Events\MapMonitoringEvent;
 use Illuminate\Support\Facades\Log;
 use App\Services\SensorSavedService;
-use App\Services\BatterySavedService;
 use App\Events\SensorMonitoringEvent;
-use App\Services\SendNotificationService;
+use App\Services\BatterySavedService;
+use App\Services\MapUpdatedService;
+use App\Services\NotificationService;
 use PhpMqtt\Client\ConnectionSettings;
 
 
@@ -26,11 +29,13 @@ class MqttConnect extends Command
         $password = env('MQTT_PASSWORD');
         $clientId = env('MQTT_CLIENT_ID', 'laravel-client');
         $useTls = env('MQTT_TLS_ENABLED', true);
-        $topics = ['sensor', 'baterai']; // Tambahkan topik lain sesuai kebutuhan
+        $topics = ['sensor', 'baterai', 'gps']; // Tambahkan topik lain sesuai kebutuhan
 
         $sensorService = new SensorSavedService();
-        $notifier = app(SendNotificationService::class);
         $batteryService = new BatterySavedService();
+        $whatsappService = new WhatsAppService();
+        $notificationService = new NotificationService($whatsappService);
+        $mapService = new MapUpdatedService();
 
         while (true) {
             try {
@@ -44,7 +49,7 @@ class MqttConnect extends Command
                 $this->info("✅ Connected to MQTT broker at {$host}:{$port}");
 
                 foreach ($topics as $topic) {
-                    $mqtt->subscribe($topic, function (string $topic, string $message) use ($sensorService, $notifier, $batteryService) {
+                    $mqtt->subscribe($topic, function (string $topic, string $message) use ($sensorService, $batteryService, $notificationService, $mapService) {
                         echo "[" . now() . "] Topic: {$topic} | Message: {$message}\n";
 
                         // Hanya proses jika topiknya adalah 'sensor'
@@ -62,9 +67,8 @@ class MqttConnect extends Command
                                 event(new SensorMonitoringEvent($payload));
                                 Log::info('Broadcast completed');
 
-                                // 3. Kirim notifikasi jika ada sensor yang tidak aman
-
-
+                                // 3. Kirim notifikasi WhatsApp
+                                $notificationService->process($payload);
                             } else {
                                 Log::warning('JSON decoding error: ' . json_last_error_msg());
                             }
@@ -77,6 +81,22 @@ class MqttConnect extends Command
                                 $batteryService->store($payload);
                             } else {
                                 Log::warning('Battery JSON decoding error: ' . json_last_error_msg());
+                            }
+                        }
+
+                        if ($topic === 'gps') {
+                            $payload = json_decode($message, true);
+                            if (json_last_error() === JSON_ERROR_NONE) {
+                                Log::info('Processing GPS data:', $payload);
+                                // Proses data GPS sesuai kebutuhan
+
+                                $mapService->store($payload);
+
+                                Log::info('Broadcasting GPS data...');
+                                event(new MapMonitoringEvent($payload));
+                                Log::info('GPS data broadcasted successfully');
+                            } else {
+                                Log::warning('GPS JSON decoding error: ' . json_last_error_msg());
                             }
                         }
 

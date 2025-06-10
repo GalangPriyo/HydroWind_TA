@@ -13,20 +13,31 @@ const handleScroll = () => {
 
 onMounted(() => {
     window.addEventListener("scroll", handleScroll);
+    // Set initial theme
+    document.documentElement.setAttribute(
+        "data-theme",
+        darkMode.value ? "dark" : "light"
+    );
 });
 
 onUnmounted(() => {
     window.removeEventListener("scroll", handleScroll);
 });
 
-const toggleTheme = () => {
-    darkMode.value = !darkMode.value;
-    localStorage.setItem("theme", darkMode.value ? "dark" : "light");
-    document.documentElement.setAttribute(
-        "data-theme",
-        darkMode.value ? "dark" : "light"
-    );
+// Close mobile menu when clicking outside
+const closeMenuOnClickOutside = (event) => {
+    if (isMenuOpen.value && !event.target.closest(".dropdown")) {
+        isMenuOpen.value = false;
+    }
 };
+
+onMounted(() => {
+    document.addEventListener("click", closeMenuOnClickOutside);
+});
+
+onUnmounted(() => {
+    document.removeEventListener("click", closeMenuOnClickOutside);
+});
 </script>
 
 <template>
@@ -37,14 +48,15 @@ const toggleTheme = () => {
                 'fixed w-full top-0 left-0 z-50 transition-all duration-300',
                 isScrolled
                     ? 'bg-base-100 shadow-md'
-                    : 'bg-opacity-50 bg-base-100 shadow-md',
+                    : 'bg-opacity-50 bg-base-100 shadow-md backdrop-blur-sm',
             ]"
         >
             <div
-                class="container mx-auto px-6 py-3 flex justify-between items-center"
+                class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center"
             >
                 <!-- Logo -->
-                <div
+                <Link
+                    href="/"
                     class="flex-1 flex justify-center lg:justify-start items-center"
                 >
                     <img
@@ -53,124 +65,40 @@ const toggleTheme = () => {
                         class="w-10 h-10 rounded-full"
                     />
                     <span class="text-lg font-bold ml-2">HydroWind</span>
-                </div>
+                </Link>
 
-                <!-- Hamburger Menu (Mobile) -->
-                <div class="lg:hidden dropdown dropdown-end">
-                    <button @click="isMenuOpen = !isMenuOpen">
-                        <i class="fa-solid fa-bars text-xl"></i>
-                    </button>
-                    <ul
-                        v-if="isMenuOpen"
-                        tabindex="0"
-                        class="mt-3 z-100 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
-                    >
-                        <li>
-                            <Link
-                                href="/"
-                                class="block px-4 py-2 hover:text-blue-600"
-                                >Home</Link
-                            >
-                        </li>
-                        <li>
-                            <Link
-                                href="/monitoring"
-                                class="block px-4 py-2 hover:text-blue-600"
-                                >Monitoring</Link
-                            >
-                        </li>
-                        <li>
-                            <Link
-                                href="/peta"
-                                class="block px-4 py-2 hover:text-blue-600"
-                                >Peta</Link
-                            >
-                        </li>
-                        <li>
-                            <Link
-                                href="/panduan"
-                                class="block px-4 py-2 hover:text-blue-600"
-                                >Panduan</Link
-                            >
-                        </li>
-                        <template v-if="user">
-                            <li>
-                                <Link
-                                    :href="
-                                        user.role === 'admin'
-                                            ? '/admin/dashboard'
-                                            : '/user/dashboard'
-                                    "
-                                    class="block px-4 py-2 hover:text-blue-600"
-                                    >Dashboard</Link
-                                >
-                            </li>
-                            <li>
-                                <Link
-                                    href="/profile"
-                                    class="block px-4 py-2 hover:text-blue-600"
-                                    >Profil</Link
-                                >
-                            </li>
-                            <li>
-                                <Link
-                                    href="/logout"
-                                    method="post"
-                                    as="button"
-                                    class="block px-4 py-2 text-red-500 hover:bg-red-100"
-                                    >Logout</Link
-                                >
-                            </li>
-                        </template>
-                        <template v-else>
-                            <li>
-                                <Link
-                                    href="/login"
-                                    class="block px-4 my-2 py-2 border-2 border-blue-500 text-xs text-blue-500 rounded-full hover:bg-blue-500 hover:text-white"
-                                    >Login</Link
-                                >
-                            </li>
-                            <li>
-                                <Link
-                                    href="/register"
-                                    class="block px-4 py-2 border-2 border-blue-500 text-xs text-blue-500 rounded-full hover:bg-blue-500 hover:text-white"
-                                    >Register</Link
-                                >
-                            </li>
-                        </template>
-                    </ul>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="hidden lg:flex items-center space-x-7">
-                    <Link href="/" class="block px-4 py-2 hover:text-blue-600"
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center space-x-6">
+                    <Link
+                        href="/"
+                        class="px-3 py-2 hover:text-primary transition-colors"
                         >Home</Link
                     >
                     <Link
                         href="/monitoring"
-                        class="block px-4 py-2 hover:text-blue-600"
+                        class="px-3 py-2 hover:text-primary transition-colors"
                         >Monitoring</Link
                     >
                     <Link
                         href="/peta"
-                        class="block px-4 py-2 hover:text-blue-600"
+                        class="px-3 py-2 hover:text-primary transition-colors"
                         >Peta</Link
                     >
                     <Link
                         href="/panduan"
-                        class="block px-4 py-2 hover:text-blue-600"
+                        class="px-3 py-2 hover:text-primary transition-colors"
                         >Panduan</Link
                     >
 
-                    <!-- User Authentication -->
+                    <!-- User Authentication Desktop -->
                     <template v-if="user">
                         <div class="dropdown dropdown-end">
                             <button
                                 tabindex="0"
-                                class="p-1 rounded hover:bg-base-300 transition-all flex items-center"
+                                class="rounded-full transition-all flex items-center"
                             >
                                 <div
-                                    class="w-10 h-10 rounded-full overflow-hidden"
+                                    class="w-10 h-10 rounded-full overflow-hidden hover:border-2 hover:border-white transition-all"
                                 >
                                     <img
                                         src="/assets/media/profil.jpg"
@@ -181,7 +109,7 @@ const toggleTheme = () => {
                             </button>
                             <ul
                                 tabindex="0"
-                                class="mt-3 z-10 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-40"
+                                class="mt-3 z-10 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
                             >
                                 <li>
                                     <Link
@@ -190,14 +118,14 @@ const toggleTheme = () => {
                                                 ? '/admin/dashboard'
                                                 : '/user/dashboard'
                                         "
-                                        class="block px-4 py-2 hover:bg-base-200"
+                                        class="block px-4 py-2 hover:bg-base-200 rounded"
                                         >Dashboard</Link
                                     >
                                 </li>
                                 <li>
                                     <Link
                                         href="/profile"
-                                        class="block px-4 py-2 hover:bg-base-200"
+                                        class="block px-4 py-2 hover:bg-base-200 rounded"
                                         >Profil</Link
                                     >
                                 </li>
@@ -206,7 +134,7 @@ const toggleTheme = () => {
                                         href="/logout"
                                         method="post"
                                         as="button"
-                                        class="block px-4 py-2 text-red-500 hover:bg-red-100"
+                                        class="block px-4 py-2 text-error hover:bg-error hover:text-error-content rounded"
                                         >Logout</Link
                                     >
                                 </li>
@@ -214,17 +142,122 @@ const toggleTheme = () => {
                         </div>
                     </template>
                     <template v-else>
-                        <Link
-                            href="/login"
-                            class="block px-4 py-2 border-2 border-blue-500 text-xs text-blue-500 rounded-full hover:bg-blue-500 hover:text-white"
-                            >Login</Link
-                        >
-                        <Link
-                            href="/register"
-                            class="block px-4 py-2 border-2 border-blue-500 text-xs text-blue-500 rounded-full hover:bg-blue-500 hover:text-white"
-                            >Register</Link
-                        >
+                        <div class="flex items-center space-x-3">
+                            <Link
+                                href="/login"
+                                class="px-4 py-2 border border-blue-600 text-sm text-blue-600 rounded-full font-medium hover:bg-blue-600 hover:text-primary-content transition-colors"
+                                >Login</Link
+                            >
+                            <Link
+                                href="/register"
+                                class="px-4 py-2 bg-blue-600 text-sm text-primary-content font-medium rounded-full hover:bg-blue-700 transition-colors"
+                                >Register</Link
+                            >
+                        </div>
                     </template>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden flex items-center space-x-4">
+                    <button
+                        @click.stop="isMenuOpen = !isMenuOpen"
+                        class="p-2 transition-colors"
+                        aria-label="Toggle menu"
+                    >
+                        <i
+                            :class="[
+                                'text-xl',
+                                isMenuOpen
+                                    ? 'fa-solid fa-xmark'
+                                    : 'fa-solid fa-bars',
+                            ]"
+                        ></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div v-if="isMenuOpen" class="lg:hidden shadow-lg" @click.stop>
+                <div class="container mx-auto px-4 py-2">
+                    <ul class="space-y-2">
+                        <li>
+                            <Link
+                                href="/"
+                                class="block px-4 py-2 hover:bg-base-100 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Home</Link
+                            >
+                        </li>
+                        <li>
+                            <Link
+                                href="/monitoring"
+                                class="block px-4 py-2 hover:bg-base-100 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Monitoring</Link
+                            >
+                        </li>
+                        <li>
+                            <Link
+                                href="/peta"
+                                class="block px-4 py-2 hover:bg-base-100 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Peta</Link
+                            >
+                        </li>
+                        <li>
+                            <Link
+                                href="/panduan"
+                                class="block px-4 py-2 hover:bg-base-100 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Panduan</Link
+                            >
+                        </li>
+                    </ul>
+
+                    <div class="mt-4 py-4 border-t border-gray-500 font-medium">
+                        <template v-if="user">
+                            <Link
+                                :href="
+                                    user.role === 'admin'
+                                        ? '/admin/dashboard'
+                                        : '/user/dashboard'
+                                "
+                                class="block px-4 py-2 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Dashboard</Link
+                            >
+                            <Link
+                                href="/profile"
+                                class="block px-4 py-2 hover:bg-base-200 rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Profil</Link
+                            >
+                            <Link
+                                href="/logout"
+                                method="post"
+                                as="button"
+                                class="block px-4 py-2 text-error hover:bg-error hover:text-error-content rounded transition-colors"
+                                @click="isMenuOpen = false"
+                                >Logout</Link
+                            >
+                        </template>
+                        <template v-else>
+                            <div class="flex flex-col space-y-3 mt-2">
+                                <Link
+                                    href="/login"
+                                    class="w-full text-center px-4 py-2 border border-blue-600 text-sm text-blue-600 rounded-full font-medium hover:bg-blue-600 hover:text-primary-content transition-colors"
+                                    @click="isMenuOpen = false"
+                                    >Login</Link
+                                >
+                                <Link
+                                    href="/register"
+                                    class="w-full text-center px-4 py-2 bg-blue-600 text-sm text-primary-content font-medium rounded-full hover:bg-blue-700 transition-colors"
+                                    @click="isMenuOpen = false"
+                                    >Register</Link
+                                >
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
         </nav>

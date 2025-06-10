@@ -10,22 +10,26 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->token = env('FONNTE_TOKEN'); // simpan di .env
+        $this->token = env('FONNTE_TOKEN'); // pastikan token disimpan di .env
     }
 
     public function sendMessage(array $targets, string $message)
     {
-        $targetString = implode(',', $targets); // format: 628xxxx,628yyyy
+        $results = [];
 
-        $response = Http::asForm()->withHeaders([
-            'Authorization' => $this->token
-        ])->post('https://api.fonnte.com/send', [
-            'target' => $targetString,
-            'message' => $message,
-            'delay' => 1,
-            'countryCode' => '62',
-        ]);
+        foreach ($targets as $target) {
+            $response = Http::asForm()->withHeaders([
+                'Authorization' => $this->token
+            ])->post('https://api.fonnte.com/send', [
+                'target' => $target,
+                'message' => $message,
+                'delay' => 1,
+                'countryCode' => '62',
+            ]);
 
-        return $response->json();
+            $results[$target] = $response->json();
+        }
+
+        return $results;
     }
 }

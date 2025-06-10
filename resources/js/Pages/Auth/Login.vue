@@ -27,106 +27,178 @@ defineOptions({ layout: GuestLayout });
 </script>
 
 <template>
-    <Head title="Log in" />
-    <div class="hero bg-gradient-to-b from-blue-200 to-cyan-200 min-h-screen">
-        <div class="hero-content flex-col lg:flex-row-reverse pt-16">
-            <div class="text-center">
-                <h1 class="text-4xl font-bold">Ayo Masuk ke Akunmu!</h1>
-                <img
-                    src="/assets/media/login.png"
-                    alt="Tidak ada perangkat"
-                    class="w-1/2 mx-auto py-8"
-                />
-                <p>
-                    Sudah punya akun? Langsung login untuk mulai menerima
-                    notifikasi bencana dan melihat data historis.
-                </p>
-                <div class="form-control mt-4">
-                    <Link
-                        :href="route('register')"
-                        class="label-text-alt link link-hover text-blue-500"
-                        >Saya belum memiliki akun</Link
-                    >
-                </div>
-            </div>
-            <div class="card glass w-full max-w-md shrink-0 shadow-2xl">
-                <form class="card-body" @submit.prevent="submit">
-                    <img
-                        src="/assets/media/HydroWind.jpeg"
-                        alt="HydroWind Logo"
-                        class="w-16 h-16 rounded-full mx-auto"
-                    />
-                    <div class="form-control">
-                        <label class="label">
-                            <InputLabel
-                                for="email"
-                                value="Email"
-                                class="label-text"
-                            />
-                        </label>
-                        <TextInput
-                            id="email"
-                            type="email"
-                            placeholder="Email"
-                            class="input input-bordered"
-                            v-model="form.email"
-                            required
-                            autofocus
-                            autocomplete="username"
-                        />
-                        <InputError class="mt-2" :message="form.errors.email" />
-                    </div>
-                    <div class="form-control">
-                        <label class="label">
-                            <InputLabel
-                                for="password"
-                                value="Password"
-                                class="label-text"
-                            />
-                        </label>
-                        <TextInput
-                            id="password"
-                            type="password"
-                            placeholder="Password"
-                            class="input input-bordered"
-                            v-model="form.password"
-                            required
-                            autocomplete="current-password"
-                        />
-                        <InputError
-                            class="mt-2"
-                            :message="form.errors.password"
-                        />
-                        <label class="label" v-if="canResetPassword">
-                            <Link
-                                :href="route('password.request')"
-                                class="label-text-alt link link-hover text-blue-500"
-                                >Lupa password?</Link
-                            >
-                        </label>
-                    </div>
-                    <!-- <div class="form-control mt-4">
-                        <label class="flex items-center">
-                            <Checkbox
-                                name="remember"
-                                v-model:checked="form.remember"
-                            />
-                            <span class="ms-2 text-sm text-gray-600"
-                                >Remember me</span
-                            >
-                        </label>
-                    </div> -->
-                    <div class="form-control mt-6">
-                        <PrimaryButton
-                            class="btn btn-primary w-full"
-                            :class="{ 'opacity-25': form.processing }"
-                            :disabled="form.processing"
+    <Head title="Masuk Akun" />
+    <div
+        class="min-h-screen flex items-center justify-center pt-20 px-4 pb-4 xl:pt-12"
+    >
+        <div
+            class="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100"
+        >
+            <div class="flex flex-col lg:flex-row">
+                <!-- Left Column - Illustration -->
+                <div
+                    class="lg:w-1/2 bg-blue-600 p-6 lg:p-8 flex flex-col items-center justify-center"
+                >
+                    <div class="text-center max-w-md w-full">
+                        <h1
+                            class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4"
                         >
-                            Log in
-                        </PrimaryButton>
+                            Selamat Datang Kembali!
+                        </h1>
+                        <img
+                            src="/assets/media/login.png"
+                            alt="Ilustrasi Login"
+                            class="w-2/3 max-w-xs mx-auto my-6 lg:mb-6"
+                        />
+                        <p class="text-white text-sm sm:text-base lg:text-lg">
+                            Masuk untuk mengakses dashboard dan melihat riwayat
+                            data sensor.
+                        </p>
+                        <div class="mt-4 lg:mt-6">
+                            <Link
+                                :href="route('register')"
+                                class="text-blue-200 hover:text-white font-medium inline-flex items-center text-sm sm:text-base"
+                            >
+                                <span>Belum punya akun? Daftar disini</span>
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </Link>
+                        </div>
                     </div>
-                </form>
+                </div>
+
+                <!-- Right Column - Login Form -->
+                <div
+                    class="lg:w-1/2 p-6 sm:p-8 flex items-center justify-center"
+                >
+                    <div class="w-full max-w-md">
+                        <div class="text-center mb-6 sm:mb-8">
+                            <img
+                                src="/assets/media/HydroWind.jpeg"
+                                alt="HydroWind Logo"
+                                class="w-12 h-12 sm:w-16 sm:h-16 rounded-full mx-auto mb-3 sm:mb-4"
+                            />
+                            <h2
+                                class="text-xl sm:text-2xl font-bold text-gray-800"
+                            >
+                                Masuk ke Akun Anda
+                            </h2>
+                            <p
+                                class="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base"
+                            >
+                                Gunakan email dan password yang terdaftar
+                            </p>
+                        </div>
+
+                        <!-- Status Message -->
+                        <div
+                            v-if="status"
+                            class="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 text-green-700 rounded-xl text-center text-sm sm:text-base"
+                        >
+                            {{ status }}
+                        </div>
+
+                        <form
+                            @submit.prevent="submit"
+                            class="space-y-4 sm:space-y-6"
+                        >
+                            <div>
+                                <InputLabel
+                                    for="email"
+                                    value="Alamat Email"
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                />
+                                <TextInput
+                                    id="email"
+                                    type="email"
+                                    v-model="form.email"
+                                    required
+                                    autofocus
+                                    autocomplete="email"
+                                    class="w-full px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-sm sm:text-base"
+                                    placeholder="contoh@email.com"
+                                />
+                                <InputError
+                                    class="mt-1 sm:mt-2 text-sm text-red-600"
+                                    :message="form.errors.email"
+                                />
+                            </div>
+
+                            <div>
+                                <div
+                                    class="flex justify-between items-center mb-1"
+                                >
+                                    <InputLabel
+                                        for="password"
+                                        value="Password"
+                                        class="block text-sm font-medium text-gray-700"
+                                    />
+                                    <Link
+                                        v-if="canResetPassword"
+                                        :href="route('password.request')"
+                                        class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                        Lupa password?
+                                    </Link>
+                                </div>
+                                <TextInput
+                                    id="password"
+                                    type="password"
+                                    v-model="form.password"
+                                    required
+                                    autocomplete="current-password"
+                                    class="w-full px-4 py-2 sm:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-sm sm:text-base"
+                                    placeholder="Masukkan password"
+                                />
+                                <InputError
+                                    class="mt-1 sm:mt-2 text-sm text-red-600"
+                                    :message="form.errors.password"
+                                />
+                            </div>
+
+                            <div class="flex items-center">
+                                <input
+                                    id="remember"
+                                    type="checkbox"
+                                    v-model="form.remember"
+                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <label
+                                    for="remember"
+                                    class="ml-2 block text-sm text-gray-700"
+                                >
+                                    Ingat saya
+                                </label>
+                            </div>
+
+                            <div>
+                                <PrimaryButton
+                                    :class="{ 'opacity-70': form.processing }"
+                                    :disabled="form.processing"
+                                    class="w-full flex justify-center items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium disabled:cursor-not-allowed text-sm sm:text-base"
+                                >
+                                    <span v-if="!form.processing">
+                                        <i class="fas fa-sign-in-alt"></i>
+                                    </span>
+                                    <span v-else>
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </span>
+                                    Masuk
+                                </PrimaryButton>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Smooth transitions for interactive elements */
+* {
+    transition-property: background-color, border-color, color, fill, stroke,
+        opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
+</style>

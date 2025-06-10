@@ -1,10 +1,9 @@
 <script setup>
-import GuestLayout from "@/Layouts/GuestLayout.vue";
 import InputError from "@/Components/InputError.vue";
 import InputLabel from "@/Components/InputLabel.vue";
 import PrimaryButton from "@/Components/PrimaryButton.vue";
 import TextInput from "@/Components/TextInput.vue";
-import { Head, useForm } from "@inertiajs/vue3";
+import { Head, Link, useForm } from "@inertiajs/vue3";
 
 const props = defineProps({
     email: {
@@ -32,41 +31,67 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Reset Password" />
-
+    <Head title="Reset Password" />
+    <div class="min-h-screen bg-blue-50 flex items-center justify-center p-8">
         <div
-            class="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-200 to-cyan-200 px-4"
+            class="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100"
         >
-            <div class="card glass w-full max-w-4xl shadow-xl py-5 px-8">
-                <!-- Flexbox dalam card-body -->
+            <div class="flex flex-col lg:flex-row">
+                <!-- Left Column - Illustration -->
                 <div
-                    class="card-body md:flex md:flex-row md:items-center md:gap-8 gap-10"
+                    class="lg:w-1/2 bg-blue-600 p-6 lg:p-8 flex flex-col items-center justify-center"
                 >
-                    <!-- Gambar reset password -->
-                    <div
-                        class="md:w-1/2 w-full flex justify-center mb-6 md:mb-0"
-                    >
+                    <div class="text-center max-w-md w-full">
+                        <h1
+                            class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4"
+                        >
+                            Atur Ulang Kata Sandi
+                        </h1>
                         <img
                             src="/assets/media/reset.png"
-                            alt="Reset Password"
-                            class="w-full object-contain"
+                            alt="Ilustrasi Reset Password"
+                            class="w-2/3 max-w-xs mx-auto my-6 lg:mb-6"
                         />
-                    </div>
-
-                    <!-- Form reset password -->
-                    <div class="md:w-1/2 w-full">
-                        <h2 class="text-3xl font-bold text-center">
-                            Reset Password
-                        </h2>
-                        <p class="text-md text-gray-600 text-center my-4">
-                            Masukkan email dan password baru Anda untuk mengatur
-                            ulang kata sandi.
+                        <p class="text-white text-sm sm:text-base lg:text-lg">
+                            Masukkan email dan kata sandi baru Anda untuk
+                            mengakses akun Anda kembali.
                         </p>
+                        <div class="mt-4 lg:mt-6">
+                            <Link
+                                :href="route('login')"
+                                class="text-blue-200 hover:text-white font-medium inline-flex items-center text-sm sm:text-base"
+                            >
+                                <span>Ingat kata sandi? Masuk disini</span>
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
 
-                        <form @submit.prevent="submit" class="space-y-4">
-                            <div class="form-control">
-                                <InputLabel for="email" value="Email" />
+                <!-- Right Column - Reset Form -->
+                <div class="lg:w-1/2 p-6 flex items-center justify-center">
+                    <div class="w-full max-w-md">
+                        <div class="text-center mb-6">
+                            <h2
+                                class="text-xl sm:text-2xl font-bold text-gray-800"
+                            >
+                                Reset Kata Sandi
+                            </h2>
+                            <p class="text-gray-600 mt-1 text-sm sm:text-base">
+                                Masukkan email dan kata sandi baru Anda
+                            </p>
+                        </div>
+
+                        <form
+                            @submit.prevent="submit"
+                            class="space-y-4 xl:space-y-6"
+                        >
+                            <div>
+                                <InputLabel
+                                    for="email"
+                                    value="Alamat Email"
+                                    class="block text-sm font-medium text-gray-700 mb-1"
+                                />
                                 <TextInput
                                     id="email"
                                     type="email"
@@ -74,18 +99,20 @@ const submit = () => {
                                     required
                                     autofocus
                                     autocomplete="username"
-                                    class="input input-bordered w-full mt-1"
+                                    class="w-full px-4 py-2 xl:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-sm sm:text-base"
+                                    placeholder="contoh@email.com"
                                 />
                                 <InputError
-                                    class="mt-1 text-red-600 text-sm"
+                                    class="mt-1 sm:mt-2 text-sm text-red-600"
                                     :message="form.errors.email"
                                 />
                             </div>
 
-                            <div class="form-control">
+                            <div>
                                 <InputLabel
                                     for="password"
-                                    value="Password Baru"
+                                    value="Kata Sandi Baru"
+                                    class="block text-sm font-medium text-gray-700 mb-1"
                                 />
                                 <TextInput
                                     id="password"
@@ -93,18 +120,20 @@ const submit = () => {
                                     v-model="form.password"
                                     required
                                     autocomplete="new-password"
-                                    class="input input-bordered w-full mt-1"
+                                    class="w-full px-4 py-2 xl:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-sm sm:text-base"
+                                    placeholder="Buat kata sandi baru"
                                 />
                                 <InputError
-                                    class="mt-1 text-red-600 text-sm"
+                                    class="mt-1 sm:mt-2 text-sm text-red-600"
                                     :message="form.errors.password"
                                 />
                             </div>
 
-                            <div class="form-control">
+                            <div>
                                 <InputLabel
                                     for="password_confirmation"
-                                    value="Konfirmasi Password"
+                                    value="Konfirmasi Kata Sandi"
+                                    class="block text-sm font-medium text-gray-700 mb-1"
                                 />
                                 <TextInput
                                     id="password_confirmation"
@@ -112,21 +141,28 @@ const submit = () => {
                                     v-model="form.password_confirmation"
                                     required
                                     autocomplete="new-password"
-                                    class="input input-bordered w-full mt-1"
+                                    class="w-full px-4 py-2 xl:py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-sm sm:text-base"
+                                    placeholder="Ulangi kata sandi"
                                 />
                                 <InputError
-                                    class="mt-1 text-red-600 text-sm"
+                                    class="mt-1 sm:mt-2 text-sm text-red-600"
                                     :message="form.errors.password_confirmation"
                                 />
                             </div>
 
-                            <div class="form-control">
+                            <div>
                                 <PrimaryButton
-                                    :class="{ 'opacity-25': form.processing }"
+                                    :class="{ 'opacity-70': form.processing }"
                                     :disabled="form.processing"
-                                    class="btn btn-primary w-full"
+                                    class="w-full flex justify-center items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium disabled:cursor-not-allowed text-sm sm:text-base"
                                 >
-                                    Reset Password
+                                    <span v-if="!form.processing">
+                                        <i class="fas fa-key"></i>
+                                    </span>
+                                    <span v-else>
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </span>
+                                    Reset Kata Sandi
                                 </PrimaryButton>
                             </div>
                         </form>
@@ -134,5 +170,15 @@ const submit = () => {
                 </div>
             </div>
         </div>
-    </GuestLayout>
+    </div>
 </template>
+
+<style scoped>
+/* Smooth transitions for interactive elements */
+* {
+    transition-property: background-color, border-color, color, fill, stroke,
+        opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
+</style>

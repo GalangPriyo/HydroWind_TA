@@ -7,11 +7,12 @@ use Inertia\Inertia;
 use App\Models\Pengguna;
 use App\Models\Whatsapp;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Illuminate\Support\Facades\Response;
 
 class PenggunaController extends Controller
 {
@@ -93,8 +94,17 @@ class PenggunaController extends Controller
         // Validasi input
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone_number' => 'required|string|max:15|unique:whatsapps,phone_number',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'phone_number' => [
+                'required',
+                'string',
+                'regex:/^62[0-9]{8,13}$/',
+                'unique:whatsapps,phone_number',
+            ],
+        ], [
+            'phone_number.regex' => 'Nomor harus diawali dengan 62 dan jumlah antara 10 - 15 digit.',
+            'phone_number.unique' => 'Nomor ini sudah terdaftar.',
+            'email.unique' => 'Email ini sudah digunakan.',
         ]);
 
         // Buat user baru dengan password default & akun terverifikasi
@@ -132,9 +142,19 @@ class PenggunaController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'phone_number' => 'nullable|string|unique:whatsapps,phone_number,' . $id . ',user_id',
+            'email' => 'required|email|max:255|unique:users,email,' . $id,
+            'phone_number' => [
+                'required',
+                'string',
+                'regex:/^62[0-9]{8,13}$/',
+                Rule::unique('whatsapps', 'phone_number')->ignore($id, 'user_id'),
+            ],
+        ], [
+            'phone_number.regex' => 'Nomor harus diawali dengan 62 dan jumlah antara 10 - 15 digit.',
+            'phone_number.unique' => 'Nomor ini sudah terdaftar.',
+            'email.unique' => 'Email ini sudah digunakan.',
         ]);
+
 
         $pengguna = User::where('id', $id)->where('role', 'user')->firstOrFail();
         $pengguna->update([

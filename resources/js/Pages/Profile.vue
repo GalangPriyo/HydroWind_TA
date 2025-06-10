@@ -28,6 +28,9 @@ const updatePassword = () => {
                 text: "Password baru Anda telah disimpan.",
                 timer: 3000,
                 showConfirmButton: false,
+                customClass: {
+                    popup: "rounded-2xl",
+                },
             });
         },
     });
@@ -40,10 +43,15 @@ const confirmDelete = () => {
         text: "Setelah akun dihapus, semua informasi Anda akan hilang dan tidak bisa dikembalikan. Harap pertimbangkan dengan matang.",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
         confirmButtonText: "Hapus",
         cancelButtonText: "Batal",
+        customClass: {
+            popup: "rounded-2xl",
+            confirmButton: "rounded-xl",
+            cancelButton: "rounded-xl",
+        },
     }).then((result) => {
         if (result.isConfirmed) {
             router.delete(route("profile.destroy"));
@@ -60,7 +68,8 @@ function goBack() {
 
 <template>
     <Head title="Profil Saya" />
-    <div class="flex flex-col gap-4 items-start justify-center">
+
+    <div class="max-w-6xl mx-auto">
         <!-- Tombol Back -->
         <button
             @click="goBack"
@@ -69,46 +78,62 @@ function goBack() {
             <i class="fa-solid fa-arrow-left"></i>
             <span>Kembali</span>
         </button>
+        <div class="flex items-center w-full justify-center">
+            <div>
+                <h1 class="text-2xl text-center font-bold text-gray-900 mb-1">
+                    Profil Akun
+                </h1>
+                <p class="text-gray-600 text-center">
+                    Informasi dasar akun Anda ditampilkan di sini.
+                </p>
+            </div>
+        </div>
 
-        <div
-            class="card w-full max-w-5xl bg-gradient-to-b from-blue-200 to-cyan-200 shadow-xl self-center my-2"
-        >
-            <div class="card-body">
-                <h1 class="text-3xl font-bold text-center mb-4">Profil Saya</h1>
-
-                <div class="flex flex-col md:flex-row gap-8">
-                    <!-- KIRI: Info Akun dan Hapus -->
-                    <div class="w-full md:w-1/2 space-y-4">
-                        <!-- Info Akun -->
-                        <div class="card glass shadow-md">
-                            <div class="card-body py-4">
+        <!-- Main Card -->
+        <div>
+            <div class="px-6 pt-6">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <!-- Left Column - Account Info -->
+                    <div class="w-full lg:w-1/2 space-y-6">
+                        <!-- Account Information Card -->
+                        <div
+                            class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
+                        >
+                            <div
+                                class="px-5 py-3 border-b border-gray-200 bg-white"
+                            >
                                 <h2
-                                    class="card-title text-blue-800 text-xl font-semibold"
+                                    class="font-medium text-gray-800 flex items-center gap-2"
                                 >
+                                    <i class="fas fa-user-circle text-xl"></i>
                                     Informasi Akun
                                 </h2>
-
+                            </div>
+                            <div class="p-6 space-y-4">
                                 <div>
-                                    <label class="font-medium text-blue-500"
-                                        >Nama:</label
+                                    <label
+                                        class="block text-sm font-medium text-gray-500 mb-1"
+                                        >Nama Lengkap</label
                                     >
-                                    <div class="text-gray-800">
+                                    <div class="text-gray-900 font-medium">
                                         {{ user.name }}
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="font-medium text-blue-500"
-                                        >Email:</label
+                                    <label
+                                        class="block text-sm font-medium text-gray-500 mb-1"
+                                        >Alamat Email</label
                                     >
-                                    <div class="text-gray-800">
+                                    <div class="text-gray-900 font-medium">
                                         {{ user.email }}
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="font-medium text-blue-500"
-                                        >Nomor WA:</label
+                                    <label
+                                        class="block text-sm font-medium text-gray-500 mb-1"
+                                        >Nomor WhatsApp</label
                                     >
-                                    <div class="text-gray-800">
+                                    <div class="text-gray-900 font-medium">
                                         {{
                                             user.whatsapp?.phone_number ??
                                             "Belum terdaftar"
@@ -118,114 +143,138 @@ function goBack() {
                             </div>
                         </div>
 
-                        <!-- Hapus Akun -->
-                        <div class="card glass shadow-md">
-                            <div class="card-body py-4">
-                                <h3 class="card-title text-red-600 text-xl">
-                                    Bahaya
-                                </h3>
-                                <p class="text-sm text-gray-600">
+                        <!-- Danger Zone Card -->
+                        <div
+                            class="bg-white rounded-xl shadow-md border border-red-200 overflow-hidden"
+                        >
+                            <div
+                                class="px-5 py-3 border-b border-red-200 bg-red-100"
+                            >
+                                <h2
+                                    class="font-semibold text-red-600 flex items-center gap-2"
+                                >
+                                    <i
+                                        class="fas fa-exclamation-triangle text-xl"
+                                    ></i>
+                                    Zona Bahaya
+                                </h2>
+                            </div>
+                            <div class="p-6">
+                                <p class="text-gray-900 mb-4">
                                     Tindakan ini akan menghapus akun Anda
                                     beserta seluruh data terkait secara permanen
                                     dan tidak dapat dipulihkan.
                                 </p>
-                                <div class="card-actions mt-4">
+                                <div class="flex justify-end">
                                     <button
                                         @click="confirmDelete"
-                                        class="btn bg-red-600 text-white border-none hover:bg-red-700"
+                                        class="flex justify-center items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium"
                                     >
-                                        <i
-                                            class="fa-solid fa-trash-can mr-1"
-                                        ></i>
-                                        Hapus Akun
+                                        <i class="fa-solid fa-trash-can"></i>
+                                        Hapus Akun Saya
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- KANAN: Ubah Password -->
-                    <div class="card glass w-full md:w-1/2 shadow-md">
-                        <div class="card-body py-4">
-                            <h2 class="card-title text-blue-800 text-xl">
-                                Ubah Password
-                            </h2>
-                            <p class="text-sm text-gray-600">
-                                Silakan isi form di bawah untuk mengganti
-                                password akun Anda.
-                            </p>
-                            <form
-                                @submit.prevent="updatePassword"
-                                class="space-y-1"
-                            >
-                                <div class="form-control m-0">
-                                    <label class="label">
-                                        <span class="label-text"
-                                            >Password Saat Ini</span
-                                        >
-                                    </label>
-                                    <input
-                                        type="password"
-                                        v-model="form.current_password"
-                                        class="input input-bordered w-full"
-                                    />
-                                    <div
-                                        v-if="form.errors.current_password"
-                                        class="text-red-500 text-sm mt-1"
-                                    >
-                                        {{ form.errors.current_password }}
-                                    </div>
-                                </div>
+                    <!-- Right Column - Change Password -->
+                    <div class="w-full lg:w-1/2">
+                        <div
+                            class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden h-full"
+                        >
+                            <div class="px-5 py-3 border-b border-gray-200">
+                                <h2
+                                    class="font-medium text-gray-800 flex items-center gap-2"
+                                >
+                                    <i class="fas fa-lock text-lg"></i>
+                                    Ubah Password
+                                </h2>
+                            </div>
+                            <div class="p-6">
+                                <p class="text-sm text-gray-600 mb-6">
+                                    Silakan isi form di bawah untuk mengganti
+                                    password akun Anda.
+                                </p>
 
-                                <div class="form-control m-0">
-                                    <label class="label">
-                                        <span class="label-text"
-                                            >Password Baru</span
+                                <form
+                                    @submit.prevent="updatePassword"
+                                    class="space-y-4"
+                                >
+                                    <div>
+                                        <label
+                                            class="block text-sm font-medium text-gray-700 mb-1"
                                         >
-                                    </label>
-                                    <input
-                                        type="password"
-                                        v-model="form.new_password"
-                                        class="input input-bordered w-full"
-                                    />
-                                    <div
-                                        v-if="form.errors.new_password"
-                                        class="text-red-500 text-sm mt-1"
-                                    >
-                                        {{ form.errors.new_password }}
-                                    </div>
-                                </div>
-
-                                <div class="form-control m-0">
-                                    <label class="label">
-                                        <span class="label-text"
-                                            >Konfirmasi Password Baru</span
+                                            Password Saat Ini
+                                        </label>
+                                        <input
+                                            type="password"
+                                            v-model="form.current_password"
+                                            class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
+                                            placeholder="Masukkan password saat ini"
+                                        />
+                                        <div
+                                            v-if="form.errors.current_password"
+                                            class="mt-1 text-sm text-red-600"
                                         >
-                                    </label>
-                                    <input
-                                        type="password"
-                                        v-model="form.confirm_password"
-                                        class="input input-bordered w-full"
-                                    />
-                                    <div
-                                        v-if="form.errors.confirm_password"
-                                        class="text-red-500 text-sm mt-1"
-                                    >
-                                        {{ form.errors.confirm_password }}
+                                            {{ form.errors.current_password }}
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="card-actions pt-4 justify-end">
-                                    <button
-                                        type="submit"
-                                        class="btn bg-blue-700 border-none text-white hover:bg-blue-800"
-                                        :disabled="form.processing"
-                                    >
-                                        <i class="fa-solid fa-floppy-disk"></i>
-                                        Simpan Password
-                                    </button>
-                                </div>
-                            </form>
+                                    <div>
+                                        <label
+                                            class="block text-sm font-medium text-gray-700 mb-1"
+                                        >
+                                            Password Baru
+                                        </label>
+                                        <input
+                                            type="password"
+                                            v-model="form.new_password"
+                                            class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
+                                            placeholder="Masukkan password baru"
+                                        />
+                                        <div
+                                            v-if="form.errors.new_password"
+                                            class="mt-1 text-sm text-red-600"
+                                        >
+                                            {{ form.errors.new_password }}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label
+                                            class="block text-sm font-medium text-gray-700 mb-1"
+                                        >
+                                            Konfirmasi Password Baru
+                                        </label>
+                                        <input
+                                            type="password"
+                                            v-model="form.confirm_password"
+                                            class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200"
+                                            placeholder="Konfirmasi password baru"
+                                        />
+                                        <div
+                                            v-if="form.errors.confirm_password"
+                                            class="mt-1 text-sm text-red-600"
+                                        >
+                                            {{ form.errors.confirm_password }}
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-2 flex justify-end">
+                                        <button
+                                            type="submit"
+                                            :disabled="form.processing"
+                                            class="flex justify-end items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            <i
+                                                class="fa-solid fa-floppy-disk"
+                                            ></i>
+                                            Ubah Password
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -233,3 +282,32 @@ function goBack() {
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Smooth transitions */
+* {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+</style>

@@ -23,6 +23,7 @@ export default {
                 base200: "#EDF6F9",
                 danger: "#EF4444",
                 textMain: "#1E293B",
+                textSecondary: "#ffdf20",
             },
         },
     },

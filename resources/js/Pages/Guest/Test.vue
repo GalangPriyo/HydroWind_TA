@@ -1,116 +1,212 @@
 <script setup>
-import { Link } from "@inertiajs/vue3";
 import GuestLayout from "@/Layouts/GuestLayout.vue";
-import Safe from "@/Components/Safe.vue";
-import Danger from "@/Components/Danger.vue";
-import Warning from "@/Components/Warning.vue";
-import { onMounted, nextTick } from "vue";
+import { onMounted, nextTick, ref, onUnmounted } from "vue";
 import Chart from "chart.js/auto";
+import Echo from "laravel-echo";
+import { Head } from "@inertiajs/vue3";
 
 defineOptions({ layout: GuestLayout });
 
 const props = defineProps({
-    devices: Array, // Menerima daftar perangkat dari backend
+    registeredNodeIds: Array,
 });
 
-// Fungsi untuk inisialisasi grafik pada setiap sensor
-const initCharts = async () => {
-    await nextTick(); // Pastikan DOM telah dirender sebelum inisialisasi Chart.js
-    props.devices.forEach((device) => {
-        device.sensors.forEach((sensor) => {
-            const ctx = document
-                .getElementById(`chart-${device.id}-${sensor.name}`)
-                ?.getContext("2d");
-            if (!ctx) return;
+const validNodeIds = ref(props.registeredNodeIds || []);
 
-            const myChart = new Chart(ctx, {
+const mqttData = ref([]); // Data dari MQTT
+const charts = []; // Referensi chart berdasarkan ID
+
+const sensorLabel = (name) => {
+    const labels = {
+        curah_hujan: "Intensitas Hujan",
+        ketinggian_air: "Ketinggian Air Sungai",
+        kecepatan_angin: "Kecepatan Angin",
+        wind_direction: "Arah Angin",
+    };
+    return labels[name] || "Sensor Tidak Dikenal";
+};
+
+const getSensorImage = (name) => {
+    const images = {
+        curah_hujan: "/assets/media/hujan2.png",
+        ketinggian_air: "/assets/media/sungai.png",
+        kecepatan_angin: "/assets/media/angin.png",
+        wind_direction: "/assets/media/kompas.png",
+    };
+    return images[name] || "/assets/media/default.png";
+};
+
+const getRandomColor = () => {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    return `rgb(${r}, ${g}, ${b})`;
+};
+
+const updateOrCreateChart = async (formattedData) => {
+    await nextTick();
+
+    const deviceIndex = mqttData.value.findIndex(
+        (d) => d.node_id === formattedData.node_id
+    );
+    if (deviceIndex === -1) return;
+
+    const device = mqttData.value[deviceIndex];
+
+    device.sensors.forEach((sensor, sensorIndex) => {
+        const chartId = `chart-${deviceIndex}-${sensorIndex}`;
+        const ctx = document.getElementById(chartId)?.getContext("2d");
+        if (!ctx) return;
+
+        let chartObj = charts.find((c) => c.id === chartId);
+
+        if (!chartObj) {
+            const newChart = new Chart(ctx, {
                 type: "line",
                 data: {
                     labels: Array(10).fill(""),
                     datasets: [
                         {
-                            label: sensorLabel(sensor.name),
-                            data: sensor.data || Array(10).fill(0), // Data awal
-                            borderColor: "rgb(75, 192, 192)",
+                            label: sensorLabel(sensor.type),
+                            data: Array(10).fill(sensor.value),
+                            borderColor: getRandomColor(),
                             borderWidth: 2,
-                            fill: {
-                                target: "origin",
-                                above: "rgba(75, 192, 192, 0.2)",
-                            },
                         },
                     ],
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { display: false },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: "Nilai Sensor",
-                                font: { size: 14 },
-                            },
-                        },
-                    },
-                },
+                options: { responsive: true, maintainAspectRatio: false },
             });
 
-            // Update data setiap detik
-            setInterval(() => {
-                const newData = Math.floor(Math.random() * 100);
-                myChart.data.datasets[0].data.shift();
-                myChart.data.datasets[0].data.push(newData);
-                myChart.update();
-            }, 1000);
-        });
+            charts.push({ id: chartId, chart: newChart });
+        } else {
+            const chart = chartObj.chart;
+            const dataset = chart.data.datasets[0];
+
+            dataset.data.shift();
+            dataset.data.push(sensor.value);
+            chart.update();
+        }
     });
 };
 
+// Callback saat data dari MQTT masuk
+function handleMQTTData(newData) {
+    if (
+        !newData ||
+        typeof newData.sensor !== "object" ||
+        newData.sensor === null
+    ) {
+        return; // abaikan jika bukan data sensor
+    }
+
+    // // 💡 Filter node_id yang tidak terdaftar
+    if (!validNodeIds.value.includes(newData.node_id)) {
+        console.warn("Data dari node_id tidak dikenal:", newData.node_id);
+        return;
+    }
+
+    const sensorUnits = {
+        kecepatan_angin: "m/s",
+        ketinggian_air: "cm",
+        curah_hujan: "mm",
+        tekanan_udara: "mb",
+    };
+
+    const formattedSensors = Object.keys(newData.sensor).map((key) => ({
+        type: key,
+        value: parseFloat(newData.sensor[key]) || 0,
+        unit: sensorUnits[key] || "N/A",
+    }));
+
+    const formattedData = {
+        node_id: newData.node_id,
+        timestamp: newData.timestamp,
+        sensors: formattedSensors,
+    };
+
+    const existingIndex = mqttData.value.findIndex(
+        (d) => d.node_id === formattedData.node_id
+    );
+
+    if (existingIndex !== -1) {
+        formattedSensors.forEach((sensor, idx) => {
+            const existingSensor = mqttData.value[existingIndex].sensors[idx];
+            existingSensor.value = sensor.value;
+
+            if (!existingSensor.data) {
+                existingSensor.data = Array(10).fill(sensor.value);
+            }
+
+            existingSensor.data.shift();
+            existingSensor.data.push(sensor.value);
+        });
+    } else {
+        mqttData.value.push({
+            ...formattedData,
+            sensors: formattedSensors.map((sensor) => ({
+                ...sensor,
+                data: Array(10).fill(sensor.value),
+            })),
+        });
+    }
+
+    updateOrCreateChart(formattedData);
+}
+
 onMounted(() => {
-    initCharts();
+    console.log("Echo object:", window.Echo);
+
+    // Listen untuk event
+    const channel = window.Echo.channel("mqtt-sensor");
+
+    channel.listen(".sensor.updated", (e) => {
+        console.log("✅ Data diterima dari WebSocket:", e);
+        handleMQTTData(e.payload);
+    });
+
+    // Debug channel subscription
+    channel.subscribed(() => {
+        console.log("✅ Successfully subscribed to mqtt-sensor channel");
+    });
 });
 
-// Mapping sensor name ke label yang lebih user-friendly
-const sensorLabel = (name) => {
-    const labels = {
-        rain_intensity: "Intensitas Hujan",
-        water_level: "Ketinggian Air Sungai",
-        wind_speed: "Kecepatan Angin",
-        wind_direction: "Arah Angin",
-    };
-    return labels[name] || name;
-};
+onUnmounted(() => {
+    // Bersihkan charts
+    charts.forEach(({ chart }) => chart.destroy());
+    charts.length = 0;
 
-// Mapping sensor name ke gambar yang sesuai
-const getSensorImage = (name) => {
-    const images = {
-        rain_intensity: "/assets/media/hujan2.png",
-        water_level: "/assets/media/sungai.png",
-        wind_speed: "/assets/media/angin.png",
-        wind_direction: "/assets/media/kompas.png",
-    };
-    return images[name] || "/assets/media/default.png";
-};
+    mqttData.value = [];
+
+    // Hentikan listening event
+    window.Echo.leave("mqtt-sensor");
+});
 </script>
 
 <template>
-    <div class="min-h-screen">
-        <div class="mx-6 pb-2">
-            <h1 class="text-base text-center font-bold text-3xl pb-6">
-                Real-Time Monitoring
-            </h1>
+    <Head title="Monitoring" />
+    <div class="bg-blue-50">
+        <div class="pt-20 w-[90%] mx-auto pb-10 min-h-screen">
+            <div class="max-w-7xl mx-auto text-center">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                    Panel Real-Time Monitoring
+                </h1>
+
+                <p class="text-lg text-gray-600 max-w-4xl mx-auto">
+                    Menampilkan data sensor bencana dari setiap alat pendeteksi
+                    secara real-time.
+                </p>
+            </div>
+
             <div>
                 <div
-                    v-if="devices && devices.length > 0"
+                    v-if="mqttData.length > 0"
                     role="tablist"
                     class="tabs tabs-lifted"
                 >
                     <!-- Loop untuk setiap device (titik pantau) -->
                     <template
-                        v-for="(device, index) in devices"
-                        :key="device.id"
+                        v-for="(device, index) in mqttData"
+                        :key="device.node_id"
                     >
                         <input
                             type="radio"
@@ -118,30 +214,28 @@ const getSensorImage = (name) => {
                             name="device_tabs"
                             role="tab"
                             class="tab"
-                            :aria-label="device.name"
+                            :aria-label="device.node_id"
                             :checked="index === 0"
                         />
                         <div
                             role="tabpanel"
-                            class="tab-content bg-base-100 border-base-300 rounded-tr-lg rounded-br-lg rounded-bl-lg p-6"
+                            class="tab-content bg-base-100 border-base-300 rounded-tr-xl rounded-br-xl rounded-bl-xl px-10 py-4"
                         >
                             <div
-                                class="flex flex-wrap gap-[20px] justify-center items-start"
+                                v-for="(sensor, sensorIndex) in device.sensors"
+                                :key="sensor.type"
+                                class="flex flex-wrap gap-[40px] justify-center items-center py-4"
                             >
                                 <!-- Loop untuk setiap sensor dalam node -->
-                                <div
-                                    v-for="sensor in device.sensors"
-                                    :key="sensor.name"
-                                    class="grow-0"
-                                >
+                                <div class="grow-0">
                                     <div
                                         class="flex justify-center items-center h-full flex-col"
                                     >
                                         <h1 class="font-bold text-xl pb-2">
-                                            {{ sensorLabel(sensor.name) }}
+                                            {{ sensorLabel(sensor.type) }}
                                         </h1>
                                         <div
-                                            class="stats stats-vertical lg:stats-horizontal shadow"
+                                            class="stats stats-vertical shadow rounded-lg"
                                         >
                                             <div
                                                 class="stat place-items-center"
@@ -149,11 +243,11 @@ const getSensorImage = (name) => {
                                                 <img
                                                     :src="
                                                         getSensorImage(
-                                                            sensor.name
+                                                            sensor.type
                                                         )
                                                     "
                                                     :alt="
-                                                        sensorLabel(sensor.name)
+                                                        sensorLabel(sensor.type)
                                                     "
                                                     class="w-24 h-24 object-cover"
                                                 />
@@ -171,7 +265,7 @@ const getSensorImage = (name) => {
                                                 >
                                                     Diukur dalam satuan,
                                                     <span class="font-bold">{{
-                                                        sensor.unit
+                                                        sensor.unit || "N/A"
                                                     }}</span>
                                                 </div>
                                             </div>
@@ -179,24 +273,20 @@ const getSensorImage = (name) => {
                                     </div>
                                 </div>
 
-                                <!-- Chart untuk setiap sensor -->
-                                <div
-                                    v-for="sensor in device.sensors"
-                                    :key="
-                                        'chart-' + device.id + '-' + sensor.name
-                                    "
-                                    class="grow-[2]"
-                                >
-                                    <div class="card glass text-base h-80">
+                                <!-- Grafik Sensor -->
+                                <div class="grow-[2]">
+                                    <div
+                                        class="card border-0 shadow text-base h-96 rounded-lg"
+                                    >
                                         <div
                                             class="card-body items-center text-center"
                                         >
                                             <canvas
                                                 :id="
                                                     'chart-' +
-                                                    device.id +
+                                                    index +
                                                     '-' +
-                                                    sensor.name
+                                                    sensorIndex
                                                 "
                                             ></canvas>
                                         </div>
@@ -208,9 +298,19 @@ const getSensorImage = (name) => {
                 </div>
 
                 <!-- Tampilkan pesan jika tidak ada data -->
-                <p v-else class="text-gray-500 text-center py-4">
-                    Tidak ada perangkat terdaftar.
-                </p>
+                <div
+                    v-else
+                    class="text-gray-900 text-center flex flex-col items-center justify-center py-20"
+                >
+                    <img
+                        src="/assets/media/no_device1.png"
+                        alt="Tidak ada perangkat"
+                        class="w-1/3 max-w-xs sm:max-w-sm md:max-w-md"
+                    />
+                    <p class="text-xl font-bold pt-4">
+                        Tidak ada perangkat tersambung.
+                    </p>
+                </div>
             </div>
         </div>
     </div>

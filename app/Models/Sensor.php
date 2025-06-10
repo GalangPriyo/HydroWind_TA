@@ -46,35 +46,8 @@ class Sensor extends Model
         return $this->data()->latest('timestamp')->first();
     }
 
-    /**
-     * Mendapatkan label nama sensor dalam bahasa Indonesia
-     */
-    public function getNameLabelAttribute()
+    public function latestData()
     {
-        $labels = [
-            'curah_hujan' => 'Curah Hujan',
-            'ketinggian_air' => 'Ketinggian Air',
-            'kecepatan_angin' => 'Kecepatan Angin',
-            'arah_angin' => 'Arah Angin',
-            'tekanan_udara' => 'Tekanan Udara'
-        ];
-
-        return $labels[$this->name] ?? $this->name;
-    }
-
-    /**
-     * Mendapatkan satuan sensor
-     */
-    public function getUnitAttribute()
-    {
-        $units = [
-            'curah_hujan' => 'mm',
-            'ketinggian_air' => 'm',
-            'kecepatan_angin' => 'm/s',
-            'arah_angin' => '°',
-            'tekanan_udara' => 'hPa'
-        ];
-
-        return $units[$this->name] ?? '';
+        return $this->hasOne(SensorData::class)->latestOfMany('timestamp');
     }
 }

@@ -14,27 +14,70 @@ class GuestController extends Controller
 
     public function home(): Response
     {
-        return Inertia::render('Guest/Welcome');
+        $devices = Device::with(['sensors' => function ($query) {
+            $query->with(['latestData']);
+        }])
+            ->where('status', 'active')
+            ->get();
+
+        return Inertia::render('Guest/Welcome', [
+            'devices' => $devices,
+        ]);
     }
+
 
     public function panduan(): Response
     {
-        return Inertia::render('Guest/Panduan');
+        $devices = Device::with('sensors')->get();
+        return Inertia::render('Guest/Panduan', ['devices' => $devices]);
     }
 
     public function monitoring()
     {
-
-        $nodeIds = \App\Models\Device::where('status', 'active')
+        $devices = Device::with(['sensors' => function ($query) {
+            $query->with(['latestData']);
+        }])
+            ->where('status', 'active')
             ->whereNotNull('node_id')
-            ->pluck('node_id')
-            ->all();
-        return Inertia::render('Guest/Monitoring', ['registeredNodeIds' => $nodeIds]);
+            ->get();
+
+        return Inertia::render('Guest/Monitoring', [
+            'registeredNodeIds' => $devices->pluck('node_id')->all(),
+            'initialDevicesData' => $devices->map(function ($device) {
+                return [
+                    'node_id' => $device->node_id,
+                    'name' => $device->name, // Tambahkan nama device
+                    'location' => $device->location, // Tambahkan lokasi
+                    'sensors' => $device->sensors->map(function ($sensor) {
+                        return [
+                            'type' => $sensor->name, // Di database fieldnya 'name' bukan 'type'
+                            'value' => $sensor->latestData->value ?? 0,
+                            'unit' => $this->getSensorUnit($sensor->name), // Tambahkan method untuk menentukan unit
+                            'data' => array_fill(0, 10, $sensor->latestData->value ?? 0),
+                            'timestamp' => $sensor->latestData->timestamp ?? now()->toDateTimeString()
+                        ];
+                    })
+                ];
+            })
+        ]);
     }
 
-    public function showMap(): Response
+    // Tambahkan method baru untuk menentukan unit sensor
+    private function getSensorUnit($sensorName)
     {
-        $devices = Device::select('id', 'name', 'latitude', 'longitude')->get();
+        $units = [
+            'curah_hujan' => 'mm',
+            'ketinggian_air' => 'cm',
+            'kecepatan_angin' => 'm/s',
+            'tekanan_udara' => 'hPa'
+        ];
+
+        return $units[$sensorName] ?? 'N/A';
+    }
+
+    public function map(): Response
+    {
+        $devices = Device::where('status', 'active')->get(['node_id', 'name', 'location', 'latitude', 'longitude']);
 
         return Inertia::render('Guest/Peta', [
             'devices' => $devices,

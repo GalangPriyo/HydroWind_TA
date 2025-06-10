@@ -54,7 +54,6 @@ const updateTime = () => {
 };
 
 // Menu items based on role
-// Menu Sidebar berdasarkan Role
 const menuItems = computed(() => {
     if (props.user?.role === "admin") {
         return [
@@ -88,11 +87,6 @@ const menuItems = computed(() => {
                 icon: "fa-solid fa-house",
             },
             {
-                name: "WhatsApp",
-                link: "/user/whatsapp",
-                icon: "fa-solid fa-brands fa-whatsapp",
-            },
-            {
                 name: "Riwayat",
                 link: "/user/riwayat",
                 icon: "fa-solid fa-database",
@@ -109,8 +103,8 @@ const confirmLogout = () => {
         text: "Apakah Anda yakin ingin keluar dari akun Anda?",
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
         confirmButtonText: "Keluar",
         cancelButtonText: "Batal",
         customClass: {
@@ -154,11 +148,12 @@ const props = defineProps({
 
 <template>
     <div class="flex h-screen bg-base-100">
-        <!-- Sidebar -->
+        <!-- Desktop Sidebar -->
         <aside
+            v-if="!isMobile"
             :class="[
                 'bg-primary text-primary-content min-h-screen transition-all duration-300 p-4 flex flex-col z-10',
-                isMinimized || isMobile ? 'w-16' : 'w-64',
+                isMinimized ? 'w-16' : 'w-64',
             ]"
         >
             <!-- Logo & Toggle -->
@@ -172,22 +167,21 @@ const props = defineProps({
                         alt="Logo"
                         class="rounded-full object-cover ml-1"
                         :class="{
-                            'w-6 h-6': isMinimized || isMobile,
-                            'w-10 h-10 ': !isMinimized && !isMobile,
+                            'w-6 h-6': isMinimized,
+                            'w-10 h-10': !isMinimized,
                         }"
                     />
                     <h2
                         class="text-xl font-bold ml-2 transition-all whitespace-nowrap"
                         :class="{
-                            'opacity-0 w-0': isMinimized || isMobile,
-                            'opacity-100': !isMinimized && !isMobile,
+                            'opacity-0 w-0': isMinimized,
+                            'opacity-100': !isMinimized,
                         }"
                     >
                         HydroWind
                     </h2>
                 </div>
                 <button
-                    v-if="!isMobile"
                     @click="toggleSidebar"
                     class="p-1 rounded-full hover:bg-primary-focus transition-all"
                     :class="{ 'ml-auto': isMinimized }"
@@ -213,8 +207,8 @@ const props = defineProps({
                         <span
                             class="ml-3 transition-all whitespace-nowrap"
                             :class="{
-                                'opacity-0 w-0': isMinimized || isMobile,
-                                'opacity-100': !isMinimized && !isMobile,
+                                'opacity-0 w-0': isMinimized,
+                                'opacity-100': !isMinimized,
                             }"
                         >
                             {{ item.name }}
@@ -233,7 +227,7 @@ const props = defineProps({
                         class="fa-solid fa-right-from-bracket w-4 text-center text-error text-lg"
                     ></i>
                     <span
-                        v-show="!isMinimized && !isMobile"
+                        v-show="!isMinimized"
                         class="ml-2 text-base font-medium"
                     >
                         Logout
@@ -247,11 +241,12 @@ const props = defineProps({
             <!-- Top Navigation -->
             <nav class="bg-base-100 shadow-lg py-2 px-4 flex items-center">
                 <!-- Mobile Toggle -->
-                <button
-                    @click="toggleSidebar"
-                    class="md:hidden p-2 mr-2 rounded-full hover:bg-base-200"
-                >
-                    <i class="fa-solid fa-bars"></i>
+                <button class="md:hidden transition-all">
+                    <img
+                        src="/assets/media/HydroWind.jpeg"
+                        alt="Logo"
+                        class="w-8 h-8 rounded-full object-cover ml-1"
+                    />
                 </button>
 
                 <!-- Date & Time -->
@@ -270,13 +265,14 @@ const props = defineProps({
 
                 <!-- Mobile Title -->
                 <div
-                    class="md:hidden mx-auto text-lg font-semibold text-base-content"
+                    v-if="isMobile"
+                    class="mx-auto text-lg font-semibold text-base-content"
                 >
                     HydroWind
                 </div>
 
                 <!-- User Profile -->
-                <div class="ml-auto flex items-center gap-3">
+                <div class="ml-0 md:ml-auto flex items-center gap-3">
                     <span
                         class="hidden md:block text-sm font-medium text-base-content"
                     >
@@ -348,6 +344,30 @@ const props = defineProps({
                     <slot />
                 </div>
             </main>
+
+            <!-- Mobile Bottom Navbar -->
+            <nav
+                v-if="isMobile"
+                class="md:hidden fixed bottom-0 left-0 right-0 bg-primary text-primary-content shadow-lg z-20"
+            >
+                <div class="flex justify-around">
+                    <template v-for="item in menuItems" :key="item.name">
+                        <Link
+                            :href="item.link"
+                            :method="item.method || 'get'"
+                            :as="item.method === 'post' ? 'button' : 'a'"
+                            class="flex flex-col items-center justify-center p-3 w-full transition-all"
+                            :class="[
+                                isActive(item.link)
+                                    ? 'bg-white/10 text-white font-bold'
+                                    : 'hover:bg-white/10',
+                            ]"
+                        >
+                            <i :class="`${item.icon} text-lg`"></i>
+                        </Link>
+                    </template>
+                </div>
+            </nav>
         </div>
     </div>
 </template>
@@ -390,5 +410,12 @@ aside nav::-webkit-scrollbar-thumb:hover {
 
 .sidebar-text {
     animation: fadeIn 0.2s ease-out;
+}
+
+/* Adjust main content padding when bottom navbar is present */
+@media (max-width: 768px) {
+    main {
+        padding-bottom: 70px !important;
+    }
 }
 </style>
