@@ -166,7 +166,7 @@ onUnmounted(() => {
 
 <template>
     <Head title="Monitoring" />
-    <div class="bg-blue-50">
+    <div class="bg-gradient-to-b from-blue-50 via-cyan-200 to-blue-400">
         <div class="pt-20 w-[90%] mx-auto pb-10 min-h-screen">
             <div class="max-w-7xl mx-auto text-center">
                 <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">

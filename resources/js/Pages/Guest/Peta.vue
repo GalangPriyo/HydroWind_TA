@@ -517,7 +517,9 @@ onBeforeUnmount(() => {
 
 <template>
     <Head title="Peta" />
-    <div class="min-h-screen bg-blue-50">
+    <div
+        class="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-200 to-blue-400"
+    >
         <div class="pt-20 pb-4 px-4 sm:px-6">
             <div class="max-w-7xl mx-auto text-center">
                 <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">

@@ -166,14 +166,16 @@ onUnmounted(() => {
 
 <template>
     <Head title="Home" />
-    <div class="min-h-screen bg-blue-50">
+    <div
+        class="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-200 to-blue-400"
+    >
         <div class="max-w-8xl mx-auto pt-20 px-4">
             <div class="text-center">
                 <h1
                     class="text-lg font-extrabold text-primary sm:text-xl md:text-2xl"
                 >
                     <span
-                        class="block text-blue-600 text-3xl mb-2 md:text-5xl sm:text-4xl"
+                        class="block text-blue-700 text-3xl mb-2 md:text-5xl sm:text-4xl"
                     >
                         HydroWind
                     </span>

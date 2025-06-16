@@ -50,7 +50,9 @@ const statusLabel = (status) => {
 
 <template>
     <Head title="Panduan" />
-    <div class="min-h-screen bg-blue-50">
+    <div
+        class="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-200 to-blue-400"
+    >
         <!-- Hero Section -->
         <div class="pt-20 pb-12 px-4 sm:px-6">
             <div class="max-w-7xl mx-auto text-center">
@@ -731,7 +733,7 @@ const statusLabel = (status) => {
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Flood Guidelines -->
                     <div
-                        class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 overflow-hidden"
+                        class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden"
                     >
                         <!-- Header dengan gradient -->
                         <div class="bg-primary px-6 py-4 -mx-0 -mt-0">
@@ -822,7 +824,7 @@ const statusLabel = (status) => {
 
                     <!-- Wind Guidelines -->
                     <div
-                        class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 overflow-hidden"
+                        class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden"
                     >
                         <!-- Header dengan gradient orange -->
                         <div class="bg-primary px-6 py-4 -mx-0 -mt-0">
