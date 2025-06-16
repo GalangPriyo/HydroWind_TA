@@ -13,6 +13,7 @@ const props = defineProps({
     initialDevicesData: Array,
 });
 
+const activeTab = ref(0);
 const validNodeIds = ref(props.registeredNodeIds || []);
 const mqttData = ref(props.initialDevicesData || []);
 const activeNode = ref(null);
@@ -34,7 +35,7 @@ const extractNumericValue = (value) => {
     return numericMatch ? parseFloat(numericMatch[0]) : 0;
 };
 
-function handleMQTTData(newData) {
+const handleMQTTData = (newData) => {
     if (
         !newData ||
         typeof newData.sensor !== "object" ||
@@ -58,7 +59,7 @@ function handleMQTTData(newData) {
     ];
 
     const sensorUnits = {
-        kecepatan_angin: "m/s",
+        kecepatan_angin: "km/jam",
         ketinggian_air: "cm",
         curah_hujan: "mm",
         tekanan_udara: "mb",
@@ -77,6 +78,22 @@ function handleMQTTData(newData) {
     );
 
     if (existingIndex !== -1) {
+        // Update status and timestamp
+        const formattedTimestamp = newData.timestamp
+            ? (() => {
+                  const d = new Date(newData.timestamp);
+                  if (isNaN(d)) return "Tidak tersedia"; // Cek jika invalid date
+                  const day = String(d.getDate()).padStart(2, "0");
+                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                  const year = d.getFullYear();
+                  const time = d.toTimeString().split(" ")[0];
+                  return `${day}-${month}-${year} | ${time} WIB`;
+              })()
+            : "Tidak tersedia";
+
+        mqttData.value[existingIndex].status = "Online";
+        mqttData.value[existingIndex].last_updated = formattedTimestamp;
+
         formattedSensors.forEach((sensor) => {
             const existingSensor = mqttData.value[existingIndex].sensors.find(
                 (s) => s.type === sensor.type
@@ -95,9 +112,23 @@ function handleMQTTData(newData) {
             }
         });
     } else {
+        const formattedTimestamp = newData.timestamp
+            ? (() => {
+                  const d = new Date(newData.timestamp);
+                  if (isNaN(d)) return "Tidak tersedia"; // Cek jika invalid date
+                  const day = String(d.getDate()).padStart(2, "0");
+                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                  const year = d.getFullYear();
+                  const time = d.toTimeString().split(" ")[0];
+                  return `${day}-${month}-${year} | ${time} WIB`;
+              })()
+            : "Tidak tersedia";
+
         const newDevice = {
             node_id: newData.node_id,
-            timestamp: newData.timestamp,
+            name: "Node " + newData.node_id.split("-")[1], // Default name if not found
+            status: "Online",
+            last_updated: formattedTimestamp,
             sensors: formattedSensors.map((sensor) => ({
                 ...sensor,
                 data: Array(10).fill(sensor.value),
@@ -106,7 +137,7 @@ function handleMQTTData(newData) {
 
         mqttData.value.push(newDevice);
     }
-}
+};
 
 const monitoringStatus = computed(() => {
     if (validNodeIds.value.length === 0) {
@@ -142,7 +173,7 @@ onUnmounted(() => {
                     Panel Real-Time Monitoring
                 </h1>
 
-                <p class="text-lg text-gray-600 max-w-4xl mx-auto">
+                <p class="text-base sm:text-lg text-gray-600 max-w-4xl mx-auto">
                     Menampilkan data sensor bencana dari setiap alat pendeteksi
                     secara real-time.
                 </p>
@@ -166,41 +197,69 @@ onUnmounted(() => {
             </div>
 
             <div v-else-if="monitoringStatus === 'has_nodes_but_no_realtime'">
-                <div role="tablist" class="tabs tabs-lifted">
-                    <template
-                        v-for="(device, index) in mqttData"
-                        :key="device.node_id"
-                    >
-                        <input
-                            type="radio"
-                            :id="'tab-' + index"
-                            name="device_tabs"
-                            role="tab"
-                            class="tab"
-                            :aria-label="device.name"
-                            :checked="index === 0"
-                        />
-                        <div
-                            role="tabpanel"
-                            class="tab-content bg-base-100 border-base-300 rounded-tr-xl rounded-br-xl rounded-bl-xl px-4 sm:px-10 py-4"
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-4 overflow-x-auto">
+                        <button
+                            v-for="(device, index) in mqttData"
+                            :key="device.node_id"
+                            @click="activeTab = index"
+                            :class="[
+                                activeTab === index
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                                'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                            ]"
                         >
-                            <div
-                                v-for="(sensor, sensorIndex) in device.sensors"
-                                :key="sensor.type"
-                                class="flex flex-col lg:flex-row gap-4 sm:gap-10 items-stretch py-4"
+                            {{ device.name }}
+                        </button>
+                    </nav>
+                </div>
+
+                <div
+                    v-for="(device, index) in mqttData"
+                    :key="device.node_id"
+                    v-show="activeTab === index"
+                    class="py-4"
+                >
+                    <div class="flex justify-end items-center">
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-gray-500">
+                                Terakhir diperbarui: {{ device.last_updated }}
+                            </span>
+                            <span
+                                v-if="device.status === 'Offline'"
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600 border border-red-600"
                             >
-                                <!-- SensorStat - diubah width dan grow settings -->
+                                Offline
+                            </span>
+                            <span
+                                v-else-if="device.status === 'Online'"
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-600 border border-green-600"
+                            >
+                                Online
+                            </span>
+                        </div>
+                    </div>
+                    <div
+                        v-for="(sensor, sensorIndex) in device.sensors"
+                        :key="sensor.type"
+                        class="py-4"
+                    >
+                        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                            <h1
+                                class="font-bold text-lg sm:text-xl pb-4 text-center"
+                            >
+                                {{ sensorLabel(sensor.type) }}
+                            </h1>
+                            <div class="flex flex-col lg:flex-row gap-4">
                                 <div
                                     class="w-full lg:w-auto lg:flex-1 lg:max-w-xs"
                                 >
                                     <SensorStat
                                         :sensor-type="sensor.type"
                                         :sensor-value="sensor.value"
-                                        :unit="sensor.unit"
                                     />
                                 </div>
-
-                                <!-- SensorChart - diubah flex-grow settings -->
                                 <div class="w-full lg:flex-[2]">
                                     <SensorChart
                                         :sensor-type="sensor.type"
@@ -212,35 +271,66 @@ onUnmounted(() => {
                                 </div>
                             </div>
                         </div>
-                    </template>
+                    </div>
                 </div>
             </div>
 
             <div v-else-if="monitoringStatus === 'has_nodes_and_realtime'">
-                <div role="tablist" class="tabs tabs-lifted">
-                    <template
-                        v-for="(device, index) in mqttData"
-                        :key="device.node_id"
-                    >
-                        <input
-                            type="radio"
-                            :id="'tab-' + index"
-                            name="device_tabs"
-                            role="tab"
-                            class="tab"
-                            :aria-label="device.name"
-                            :checked="index === 0"
-                        />
-                        <div
-                            role="tabpanel"
-                            class="tab-content bg-base-100 border-base-300 rounded-tr-xl rounded-br-xl rounded-bl-xl px-4 sm:px-10 py-4"
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-4 overflow-x-auto">
+                        <button
+                            v-for="(device, index) in mqttData"
+                            :key="device.node_id"
+                            @click="activeTab = index"
+                            :class="[
+                                activeTab === index
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                                'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm',
+                            ]"
                         >
-                            <div
-                                v-for="(sensor, sensorIndex) in device.sensors"
-                                :key="sensor.type"
-                                class="flex flex-col lg:flex-row gap-4 sm:gap-10 items-stretch py-4"
+                            {{ device.name }}
+                        </button>
+                    </nav>
+                </div>
+
+                <div
+                    v-for="(device, index) in mqttData"
+                    :key="device.node_id"
+                    v-show="activeTab === index"
+                    class="py-4"
+                >
+                    <div class="flex justify-end items-center">
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-gray-500">
+                                Terakhir diperbarui: {{ device.last_updated }}
+                            </span>
+                            <span
+                                v-if="device.status === 'Offline'"
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600 border border-red-600"
                             >
-                                <!-- SensorStat - diubah width dan grow settings -->
+                                Offline
+                            </span>
+                            <span
+                                v-else-if="device.status === 'Online'"
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-600 border border-green-600"
+                            >
+                                Online
+                            </span>
+                        </div>
+                    </div>
+                    <div
+                        v-for="(sensor, sensorIndex) in device.sensors"
+                        :key="sensor.type"
+                        class="py-4"
+                    >
+                        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6">
+                            <h1
+                                class="font-bold text-lg sm:text-xl pb-4 text-center"
+                            >
+                                {{ sensorLabel(sensor.type) }}
+                            </h1>
+                            <div class="flex flex-col lg:flex-row gap-4">
                                 <div
                                     class="w-full lg:w-auto lg:flex-1 lg:max-w-xs"
                                 >
@@ -250,8 +340,6 @@ onUnmounted(() => {
                                         :unit="sensor.unit"
                                     />
                                 </div>
-
-                                <!-- SensorChart - diubah flex-grow settings -->
                                 <div class="w-full lg:flex-[2]">
                                     <SensorChart
                                         :sensor-type="sensor.type"
@@ -263,7 +351,7 @@ onUnmounted(() => {
                                 </div>
                             </div>
                         </div>
-                    </template>
+                    </div>
                 </div>
             </div>
 

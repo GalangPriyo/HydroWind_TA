@@ -45,7 +45,7 @@ const sensorConfig = {
     },
     kecepatan_angin: {
         label: "Kecepatan Angin",
-        unit: "m/s",
+        unit: "km/jam",
         icon: "fa-wind",
     },
     tekanan_udara: {

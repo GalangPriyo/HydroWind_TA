@@ -151,9 +151,9 @@ export default {
                 tekanan_udara: "hPa",
             };
 
-            if (type === "kecepatan_angin") {
-                return `${Math.round(value * 3.6)} ${units[type]}`;
-            }
+            // if (type === "kecepatan_angin") {
+            //     return `${Math.round(value * 3.6)} ${units[type]}`;
+            // }
 
             return `${value} ${units[type]}`;
         },

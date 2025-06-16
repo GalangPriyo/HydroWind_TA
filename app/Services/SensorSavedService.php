@@ -42,7 +42,7 @@ class SensorSavedService
                 continue;
             }
 
-            // Konversi nilai ke angka (hapus satuan seperti "cm", "mm", "m/s")
+            // Konversi nilai ke angka (hapus satuan seperti "cm", "mm", "km/jam")
             $value = $this->sanitizeValue($rawValue);
 
             if (!is_numeric($value)) {

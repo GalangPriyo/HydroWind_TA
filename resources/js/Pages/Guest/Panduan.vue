@@ -58,7 +58,7 @@ const statusLabel = (status) => {
                     Panduan Sistem Monitoring HydroWind
                 </h1>
 
-                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                <p class="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto">
                     Sistem pemantauan bencana berbasis IoT untuk deteksi dini
                     bencana banjir dan angin kencang
                 </p>
@@ -583,7 +583,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 700 m/s</span
+                                            >&lt; 700 km/jam</span
                                         >
                                     </td>
                                     <td
@@ -639,7 +639,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 700 m/s</span
+                                            >≥ 700 km/jam</span
                                         >
                                     </td>
                                     <td
@@ -695,7 +695,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1300 m/s</span
+                                            >≥ 1300 km/jam</span
                                         >
                                     </td>
                                     <td

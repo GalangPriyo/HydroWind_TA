@@ -99,6 +99,22 @@ watch(searchQuery, (newVal) => {
 
 // Konfirmasi hapus dengan SweetAlert
 const confirmDelete = (device) => {
+    // Check if device is active
+    if (device.status === "active") {
+        Swal.fire({
+            title: "Tidak Dapat Dihapus",
+            text: `Perangkat '${device.name}' sedang aktif dan tidak dapat dihapus.`,
+            icon: "error",
+            confirmButtonColor: "#3b82f6",
+            confirmButtonText: "OK",
+            customClass: {
+                popup: "rounded-2xl",
+                confirmButton: "rounded-xl",
+            },
+        });
+        return;
+    }
+
     Swal.fire({
         title: "Hapus Perangkat",
         text: `Apakah Anda benar-benar ingin menghapus perangkat '${device.name}'?`,
@@ -493,8 +509,15 @@ const paginationLinks = computed(() => {
                                 </Link>
                                 <button
                                     @click="confirmDelete(device)"
-                                    class="text-center border border-red-600 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium tooltip"
+                                    class="text-center border px-3 py-2 rounded-lg transition-colors text-sm font-medium tooltip"
+                                    :class="{
+                                        'border-red-600 bg-red-50 text-red-600 hover:bg-red-100':
+                                            device.status !== 'active',
+                                        'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed':
+                                            device.status === 'active',
+                                    }"
                                     data-tip="Hapus"
+                                    :disabled="device.status === 'active'"
                                 >
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
@@ -654,8 +677,17 @@ const paginationLinks = computed(() => {
                                         </Link>
                                         <button
                                             @click="confirmDelete(device)"
-                                            class="text-center border border-red-600 px-2 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium tooltip"
+                                            class="text-center border px-2 py-1 rounded-lg transition-colors text-sm font-medium tooltip"
+                                            :class="{
+                                                'border-red-600 bg-red-50 text-red-600 hover:bg-red-100':
+                                                    device.status !== 'active',
+                                                'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed':
+                                                    device.status === 'active',
+                                            }"
                                             data-tip="Hapus"
+                                            :disabled="
+                                                device.status === 'active'
+                                            "
                                         >
                                             <i
                                                 class="fa-solid fa-trash-can"

@@ -12,12 +12,12 @@ const props = defineProps({
 
 const chartInstance = ref(null);
 
-const getRandomColor = () => {
-    const r = Math.floor(Math.random() * 256);
-    const g = Math.floor(Math.random() * 256);
-    const b = Math.floor(Math.random() * 256);
-    return `rgb(${r}, ${g}, ${b})`;
-};
+// const getRandomColor = () => {
+//     const r = Math.floor(Math.random() * 256);
+//     const g = Math.floor(Math.random() * 256);
+//     const b = Math.floor(Math.random() * 256);
+//     return `rgb(${r}, ${g}, ${b})`;
+// };
 
 const sensorLabel = (name) => {
     const labels = {
@@ -46,10 +46,11 @@ onMounted(() => {
                 {
                     label: sensorLabel(props.sensorType),
                     data: props.sensorData || Array(10).fill(props.sensorValue),
-                    borderColor: getRandomColor(),
+                    borderColor: "#2b7fff",
                     borderWidth: 2,
                     tension: 0.1,
-                    fill: false,
+                    fill: true,
+                    backgroundColor: "rgba(219, 234, 254, 0.4)",
                 },
             ],
         },
@@ -99,7 +100,9 @@ watch(
 </script>
 
 <template>
-    <div class="card border-0 shadow text-base h-full rounded-lg">
+    <div
+        class="card border border-gray-200 text-base h-[350px] rounded-lg bg-white"
+    >
         <div class="card-body items-center text-center p-2 sm:p-4 h-full">
             <canvas
                 :id="`chart-${index}-${sensorIndex}`"
@@ -108,3 +111,4 @@ watch(
         </div>
     </div>
 </template>
+s

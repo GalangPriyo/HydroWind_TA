@@ -106,7 +106,7 @@ function handleMQTTData(newData) {
     }
 
     const sensorUnits = {
-        kecepatan_angin: "m/s",
+        kecepatan_angin: "km/jam",
         ketinggian_air: "cm",
         curah_hujan: "mm",
         tekanan_udara: "mb",

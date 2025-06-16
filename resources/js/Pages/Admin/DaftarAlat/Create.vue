@@ -36,7 +36,7 @@ const availableSensors = [
     {
         value: "kecepatan_angin",
         label: "Kecepatan Angin",
-        unit: "m/s",
+        unit: "km/jam",
         icon: "fa-wind",
         description: "Mengukur kecepatan angin",
     },

@@ -130,6 +130,7 @@ class DeviceController extends Controller
 
         // Update Sensor
         $existingSensorIds = [];
+
         foreach ($request->sensors as $sensor) {
             if (!empty($sensor['id'])) {
                 // Update sensor yang sudah ada
@@ -139,14 +140,25 @@ class DeviceController extends Controller
                 ]);
                 $existingSensorIds[] = $sensor['id'];
             } else {
-                // Tambahkan sensor baru
-                $newSensor = Sensor::create([
-                    'device_id' => $device->id,
-                    'name' => $sensor['name'],
-                ]);
-                $existingSensorIds[] = $newSensor->id;
+                // Cek apakah sensor dengan nama tersebut sudah ada pada device ini
+                $existingSensor = Sensor::where('device_id', $device->id)
+                    ->where('name', $sensor['name'])
+                    ->first();
+
+                if ($existingSensor) {
+                    // Sudah ada, tidak perlu buat baru
+                    $existingSensorIds[] = $existingSensor->id;
+                } else {
+                    // Tambahkan sensor baru
+                    $newSensor = Sensor::create([
+                        'device_id' => $device->id,
+                        'name' => $sensor['name'],
+                    ]);
+                    $existingSensorIds[] = $newSensor->id;
+                }
             }
         }
+
 
         // Hapus sensor yang tidak ada dalam request
         Sensor::where('device_id', $device->id)->whereNotIn('id', $existingSensorIds)->delete();
@@ -158,34 +170,14 @@ class DeviceController extends Controller
     public function destroyDevice($id)
     {
         $device = Device::findOrFail($id);
+
+        // Check if device is active
+        if ($device->status === 'active') {
+            return redirect()->route('admin.devices')->with('error', 'Device aktif tidak dapat dihapus!');
+        }
+
         $device->delete(); // Karena ada `onDelete('cascade')`, sensor ikut terhapus
 
         return redirect()->route('admin.devices')->with('success', 'Device berhasil dihapus!');
-    }
-
-    public function provision(Request $request)
-    {
-        $request->validate([
-            'identifier' => 'required|string|max:255', // MAC address dari ESP32
-        ]);
-
-        $incomingIdentifier = $request->identifier;
-
-        // Cek apakah device dengan identifier sementara (MAC address) sudah pernah daftar
-        $device = Device::where('identifier', $incomingIdentifier)->first();
-
-        if (!$device) {
-            // Buat device baru dengan UUID sebagai identifier resmi dan token acak
-            $device = Device::create([
-                'identifier' => (string) Str::uuid(), // UUID sebagai identifier sebenarnya
-                'token' => Str::random(32),
-                'mac_address' => $incomingIdentifier, // Simpan juga MAC sebagai referensi
-            ]);
-        }
-
-        return response()->json([
-            'identifier' => $device->identifier,
-            'token' => $device->token,
-        ]);
     }
 }

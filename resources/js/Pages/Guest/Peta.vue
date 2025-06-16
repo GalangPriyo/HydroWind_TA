@@ -8,7 +8,9 @@ import Echo from "laravel-echo";
 
 defineOptions({ layout: GuestLayout });
 
-const { props } = usePage(); // Data dari backend
+const props = defineProps({
+    devices: Array,
+});
 
 console.log("Device meta from props:", props.devices);
 
@@ -30,51 +32,149 @@ props.devices.forEach((device) => {
 
 // Tampilkan marker awal dari database
 function showInitialMarkers() {
-    for (const node_id in deviceMeta) {
-        const device = deviceMeta[node_id];
+    props.devices.forEach((device) => {
+        if (isNaN(device.latitude) || isNaN(device.longitude)) return;
 
-        // Skip jika lat/lng invalid
-        if (isNaN(device.latitude) || isNaN(device.longitude)) continue;
+        let sensorHtml = "";
+        const availableSensors = [];
+
+        if (device.sensors && device.sensors.length > 0) {
+            device.sensors.forEach((sensor) => {
+                if (sensor.latest_data) {
+                    availableSensors.push(sensor.name);
+                }
+            });
+
+            if (availableSensors.length > 0) {
+                sensorHtml = '<div class="sensor-section">';
+
+                if (availableSensors.includes("kecepatan_angin")) {
+                    const kecepatanSensor = device.sensors.find(
+                        (s) => s.name === "kecepatan_angin"
+                    );
+                    sensorHtml += `
+    <div class="sensor-item wind">
+        <div class="sensor-title">Kecepatan Angin</div>
+        <div class="sensor-value">${
+            kecepatanSensor.latest_data.value !== undefined &&
+            kecepatanSensor.latest_data.value !== null
+                ? kecepatanSensor.latest_data.value + " km/jam"
+                : "-"
+        }</div>
+    </div>`;
+                }
+
+                if (availableSensors.includes("ketinggian_air")) {
+                    const ketinggianSensor = device.sensors.find(
+                        (s) => s.name === "ketinggian_air"
+                    );
+                    sensorHtml += `
+    <div class="sensor-item water">
+        <div class="sensor-title">Ketinggian Air</div>
+        <div class="sensor-value">${
+            ketinggianSensor.latest_data.value !== undefined &&
+            ketinggianSensor.latest_data.value !== null
+                ? ketinggianSensor.latest_data.value + " cm"
+                : "-"
+        }</div>
+    </div>`;
+                }
+
+                if (availableSensors.includes("curah_hujan")) {
+                    const curahHujanSensor = device.sensors.find(
+                        (s) => s.name === "curah_hujan"
+                    );
+                    sensorHtml += `
+    <div class="sensor-item rain">
+        <div class="sensor-title">Curah Hujan</div>
+        <div class="sensor-value">${
+            curahHujanSensor.latest_data.value !== undefined &&
+            curahHujanSensor.latest_data.value !== null
+                ? curahHujanSensor.latest_data.value + " mm"
+                : "-"
+        }</div>
+    </div>`;
+                }
+
+                if (availableSensors.includes("tekanan_udara")) {
+                    const tekananSensor = device.sensors.find(
+                        (s) => s.name === "tekanan_udara"
+                    );
+                    sensorHtml += `
+    <div class="sensor-item pressure">
+        <div class="sensor-title">Tekanan Udara</div>
+        <div class="sensor-value">${
+            tekananSensor.latest_data.value !== undefined &&
+            tekananSensor.latest_data.value !== null
+                ? tekananSensor.latest_data.value + " hPa"
+                : "-"
+        }</div>
+    </div>`;
+                }
+
+                sensorHtml += "</div>";
+            } else {
+                sensorHtml =
+                    '<p style="margin: 0; text-align: center;">Belum Ada Data</p>';
+            }
+        } else {
+            sensorHtml =
+                '<p style="margin: 0; text-align: center;">Belum Ada Data</p>';
+        }
+
+        // Buat marker dengan popupHtml
+        const popupHtml = `
+            <div class="custom-popup">
+                <div class="popup-header">
+                    <h3>${device.name}</h3>
+                    <span class="device-id">ID: ${device.node_id}</span>
+                </div>
+
+                <div class="popup-body">
+                    <div class="info-section">
+                        <div class="info-row">
+                            <i class="fas fa-map-marker-alt" style="margin-right: 14px; margin-left: 2px; margin-top: 3px"></i>
+                            <span>${device.location}</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fas fa-map-pin" style="margin-top: 2px"></i>
+                            <span>${device.latitude}, ${device.longitude}</span>
+                        </div>
+                    </div>
+                    ${sensorHtml}
+                </div>
+
+                <div class="popup-footer">
+                    <small>
+                Terakhir diperbarui: ${
+                    device.sensors?.[0]?.latest_data?.timestamp
+                        ? (() => {
+                              const d = new Date(
+                                  device.sensors[0].latest_data.timestamp
+                              );
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(
+                                  2,
+                                  "0"
+                              );
+                              const year = d.getFullYear();
+                              const time = d.toTimeString().split(" ")[0];
+                              return `${day}-${month}-${year} | ${time} WIB`;
+                          })()
+                        : "Tidak tersedia"
+                }
+
+            </small>
+                </div>
+            </div>
+        `;
 
         const marker = L.marker([device.latitude, device.longitude])
             .addTo(map)
-            .bindPopup(
-                `
-                
-                <div class="custom-popup">
-        <div class="popup-header">
-            <h3>${device.name}</h3>
-            <span class="device-id">ID: ${device.node_id} </span>
-        </div>
-        
-        <div class="popup-body">
-            <div class="info-section">
-                <div class="info-row">
-                    <i class="fas fa-map-marker-alt" style="margin-right: 14px; margin-left: 2px; margin-top: 3px"></i>
-                    <span>${device.location}</span>
-                </div>
-                <div class="info-row">
-                    <i class="fas fa-map-pin" style="margin-top: 2px"></i>
-                    <span>${device.latitude}, ${device.longitude}</span>
-                </div>
-            </div>
-            <div>
-                <p style="margin:0; text-align:center;">Belum Ada Data</p>
-            </div>
-        </div>
-        
-        <div class="popup-footer">
-    <small>Terakhir update: ${new Date().toLocaleString("id-ID", {
-        timeZone: "Asia/Jakarta",
-    })}</small>
-</div>
+            .bindPopup(popupHtml);
 
-    </div>
-                `
-            );
-
-        liveMarkers[node_id] = marker;
-    }
+        liveMarkers[device.node_id] = marker;
+    });
 }
 
 // Tangani pesan dari MQTT GPS
@@ -88,69 +188,119 @@ function onMQTTGps(data) {
 
     const device = deviceMeta[node_id];
     const icon = createArrowIcon(angin?.derajat || 0);
+    const sensor = sensorData[node_id] || {};
 
     if (liveMarkers[node_id]) {
         map.removeLayer(liveMarkers[node_id]);
     }
 
-    const sensor = sensorData[node_id] || {};
+    // Daftar sensor yang tersedia (gabungan dari sensorData dan data angin)
+    const availableSensors = Object.keys(sensor).filter(
+        (key) => sensor[key] !== null
+    );
+    if (angin?.arah) availableSensors.push("arah_angin");
+
+    let sensorHtml = "";
+
+    if (availableSensors.length > 0) {
+        sensorHtml = '<div class="sensor-section">';
+
+        // Arah angin (dari data GPS)
+        if (angin?.arah) {
+            sensorHtml += `
+            <div class="sensor-item arah">
+                <div class="sensor-title">Arah Angin</div>
+                <div class="sensor-value">
+                    ${angin.arah} (${angin.derajat || "-"}°)
+                </div>
+            </div>`;
+        }
+
+        // Sensor lainnya (dari sensorData)
+        if (availableSensors.includes("kecepatan_angin")) {
+            sensorHtml += `
+    <div class="sensor-item wind">
+        <div class="sensor-title">Kecepatan Angin</div>
+        <div class="sensor-value">${
+            sensor.kecepatan_angin !== undefined &&
+            sensor.kecepatan_angin !== null
+                ? sensor.kecepatan_angin + " km/jam"
+                : "-"
+        }</div>
+    </div>`;
+        }
+
+        if (availableSensors.includes("ketinggian_air")) {
+            sensorHtml += `
+    <div class="sensor-item water">
+        <div class="sensor-title">Ketinggian Air</div>
+        <div class="sensor-value">${
+            sensor.ketinggian_air !== undefined &&
+            sensor.ketinggian_air !== null
+                ? sensor.ketinggian_air + " cm"
+                : "-"
+        }</div>
+    </div>`;
+        }
+
+        if (availableSensors.includes("curah_hujan")) {
+            sensorHtml += `
+    <div class="sensor-item rain">
+        <div class="sensor-title">Curah Hujan</div>
+        <div class="sensor-value">${
+            sensor.curah_hujan !== undefined && sensor.curah_hujan !== null
+                ? sensor.curah_hujan + " mm"
+                : "-"
+        }</div>
+    </div>`;
+        }
+
+        if (availableSensors.includes("tekanan_udara")) {
+            sensorHtml += `
+    <div class="sensor-item pressure">
+        <div class="sensor-title">Tekanan Udara</div>
+        <div class="sensor-value">${
+            sensor.tekanan_udara !== undefined && sensor.tekanan_udara !== null
+                ? sensor.tekanan_udara + " hPa"
+                : "-"
+        }</div>
+    </div>`;
+        }
+
+        sensorHtml += "</div>";
+    } else {
+        sensorHtml =
+            '<p style="margin: 0; text-align: center;">Belum Ada Data</p>';
+    }
 
     const marker = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`
-    <div class="custom-popup">
-        <div class="popup-header">
-            <h3>${device.name}</h3>
-            <span class="device-id">ID: ${node_id}</span>
-        </div>
-        
-        <div class="popup-body">
-            <div class="info-section">
-                <div class="info-row">
-                    <i class="fas fa-map-marker-alt" style="margin-right: 14px; margin-left: 2px; margin-top: 3px"></i>
-                    <span>${device.location}</span>
-                </div>
-                <div class="info-row">
-                    <i class="fas fa-map-pin" style="margin-top: 2px"></i>
-                    <span>${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
-                </div>
+        <div class="custom-popup">
+            <div class="popup-header">
+                <h3>${device.name}</h3>
+                <span class="device-id">ID: ${node_id}</span>
             </div>
             
-            <div class="sensor-section">
-                <div class="sensor-item arah">
-                    <div class="sensor-title">Arah Angin</div>
-                    <div class="sensor-value">
-                        ${angin?.arah || "-"} (${angin?.derajat || "-"}°)
+            <div class="popup-body">
+                <div class="info-section">
+                    <div class="info-row">
+                        <i class="fas fa-map-marker-alt" style="margin-right: 14px; margin-left: 2px; margin-top: 3px"></i>
+                        <span>${device.location}</span>
+                    </div>
+                    <div class="info-row">
+                        <i class="fas fa-map-pin" style="margin-top: 2px"></i>
+                        <span>${lat.toFixed(6)}, ${lng.toFixed(6)}</span>
                     </div>
                 </div>
-
-                <div class="sensor-item wind">
-                    <div class="sensor-title">Kecepatan Angin</div>
-                    <div class="sensor-value">${
-                        sensor.kecepatan_angin || "-"
-                    }</div>
-                </div>
-                
-                <div class="sensor-item water">
-                    <div class="sensor-title">Ketinggian Air</div>
-                    <div class="sensor-value">${
-                        sensor.ketinggian_air || "-"
-                    }</div>
-                </div>
-                
-                <div class="sensor-item rain">
-                    <div class="sensor-title">Curah Hujan</div>
-                    <div class="sensor-value">${sensor.curah_hujan || "-"}</div>
-                </div>
+                ${sensorHtml}
+            </div>
+            
+            <div class="popup-footer">
+                <small>Terakhir update: ${new Date().toLocaleString("id-ID", {
+                    timeZone: "Asia/Jakarta",
+                })}</small>
             </div>
         </div>
-        
-        <div class="popup-footer">
-    <small>Terakhir update: ${new Date().toLocaleString("id-ID", {
-        timeZone: "Asia/Jakarta",
-    })}</small>
-</div>
-
-    </div>
-`);
+    `);
 
     liveMarkers[node_id] = marker;
 }
@@ -166,6 +316,74 @@ function onMQTTSensor(data) {
     if (liveMarkers[data.node_id]) {
         const marker = liveMarkers[data.node_id];
         const device = deviceMeta[data.node_id];
+
+        // Dapatkan daftar sensor yang tersedia
+        const availableSensors = Object.keys(data.sensor).filter(
+            (key) => data.sensor[key] !== null
+        );
+
+        let sensorHtml = "";
+
+        if (availableSensors.length > 0) {
+            sensorHtml = '<div class="sensor-section">';
+
+            if (availableSensors.includes("arah_angin")) {
+                sensorHtml += `
+                <div class="sensor-item arah">
+                    <div class="sensor-title">Arah Angin</div>
+                    <div class="sensor-value">
+                        ${data.angin?.arah || "-"} (${
+                    data.angin?.derajat || "-"
+                }°)
+                    </div>
+                </div>`;
+            }
+
+            if (availableSensors.includes("kecepatan_angin")) {
+                sensorHtml += `
+                <div class="sensor-item wind">
+                    <div class="sensor-title">Kecepatan Angin</div>
+                    <div class="sensor-value">${
+                        data.sensor.kecepatan_angin || "-"
+                    }</div>
+                </div>`;
+            }
+
+            if (availableSensors.includes("ketinggian_air")) {
+                sensorHtml += `
+                <div class="sensor-item water">
+                    <div class="sensor-title">Ketinggian Air</div>
+                    <div class="sensor-value">${
+                        data.sensor.ketinggian_air || "-"
+                    }</div>
+                </div>`;
+            }
+
+            if (availableSensors.includes("curah_hujan")) {
+                sensorHtml += `
+                <div class="sensor-item rain">
+                    <div class="sensor-title">Curah Hujan</div>
+                    <div class="sensor-value">${
+                        data.sensor.curah_hujan || "-"
+                    }</div>
+                </div>`;
+            }
+
+            if (availableSensors.includes("tekanan_udara")) {
+                sensorHtml += `
+                <div class="sensor-item pressure">
+                    <div class="sensor-title">Tekanan Udara</div>
+                    <div class="sensor-value">${
+                        data.sensor.tekanan_udara || "-"
+                    }</div>
+                </div>`;
+            }
+
+            sensorHtml += "</div>";
+        } else {
+            sensorHtml =
+                '<p style="margin: 0; text-align: center;">Belum Ada Data</p>';
+        }
 
         marker.setPopupContent(`
         <div class="custom-popup">
@@ -188,37 +406,7 @@ function onMQTTSensor(data) {
                     </div>
                 </div>
                 
-                <div class="sensor-section">
-                    <div class="sensor-item arah">
-                        <div class="sensor-title">Arah Angin</div>
-                        <div class="sensor-value">
-                            ${data.angin?.arah || "-"} (${
-            data.angin?.derajat || "-"
-        }°)
-                        </div>
-                    </div>
-
-                    <div class="sensor-item wind">
-                        <div class="sensor-title">Kecepatan Angin</div>
-                        <div class="sensor-value">${
-                            data.sensor.kecepatan_angin || "-"
-                        }</div>
-                    </div>
-                    
-                    <div class="sensor-item water">
-                        <div class="sensor-title">Ketinggian Air</div>
-                        <div class="sensor-value">${
-                            data.sensor.ketinggian_air || "-"
-                        }</div>
-                    </div>
-                    
-                    <div class="sensor-item rain">
-                        <div class="sensor-title">Curah Hujan</div>
-                        <div class="sensor-value">${
-                            data.sensor.curah_hujan || "-"
-                        }</div>
-                    </div>
-                </div>
+                ${sensorHtml}
             </div>
             
             <div class="popup-footer">
@@ -336,7 +524,7 @@ onBeforeUnmount(() => {
                     Peta Lokasi Penempatan Alat
                 </h1>
 
-                <p class="text-lg text-gray-600 max-w-4xl mx-auto">
+                <p class="text-base sm:text-lg text-gray-600 max-w-4xl mx-auto">
                     Menampilkan posisi alat deteksi bencana aktif berdasarkan
                     koordinat terkini.
                 </p>
@@ -420,6 +608,11 @@ onBeforeUnmount(() => {
     padding: 10px;
     border-radius: 8px;
     background: #dbeafe;
+}
+
+.sensor-item.arah {
+    background: #dbeafe;
+    grid-column: span 2;
 }
 
 .sensor-title {

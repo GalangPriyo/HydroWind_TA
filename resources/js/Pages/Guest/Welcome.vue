@@ -31,6 +31,7 @@ const classifyStatus = (value, type) => {
 
 const getInitialSensorData = (node) => {
     const sensors = {};
+    const timestamps = [];
 
     node.sensors.forEach((sensor) => {
         const latest = sensor.latest_data;
@@ -40,6 +41,7 @@ const getInitialSensorData = (node) => {
                 value,
                 status: classifyStatus(value, sensor.name),
             };
+            timestamps.push(new Date(latest.timestamp));
         } else {
             // Beri nilai default jika belum ada data
             sensors[sensor.name] = {
@@ -49,15 +51,22 @@ const getInitialSensorData = (node) => {
         }
     });
 
+    // Cari timestamp terbaru (maksimum)
+    const latestTimestamp = timestamps.length
+        ? new Date(Math.max(...timestamps.map((t) => t.getTime())))
+        : null;
+
     return {
         name: node.name,
-        updatedAt: node.updated_at
-            ? new Date(node.updated_at).toLocaleTimeString("en-GB", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  timeZone: "Asia/Jakarta",
-              })
+        updatedAt: latestTimestamp
+            ? (() => {
+                  const d = latestTimestamp;
+                  const day = String(d.getDate()).padStart(2, "0");
+                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                  const year = d.getFullYear();
+                  const time = d.toTimeString().split(" ")[0];
+                  return `${day}-${month}-${year} | ${time} WIB`;
+              })()
             : "Tidak tersedia",
         sensors,
     };
@@ -78,12 +87,14 @@ const handleMQTTData = (payload) => {
     const validSensorNames = validSensorsPerNode[payload.node_id];
     if (!validSensorNames) return;
 
-    const updatedAt = new Date().toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        timeZone: "Asia/Jakarta",
-    });
+    const updatedAt =
+        payload.timestamp ||
+        new Date().toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            timeZone: "Asia/Jakarta",
+        });
 
     const sensors = {};
 
@@ -245,7 +256,7 @@ onUnmounted(() => {
                         </h2>
                         <p class="text-sm text-gray-500">
                             Terakhir diperbarui:
-                            {{ activeNode[1].updatedAt }} WIB
+                            {{ activeNode[1].updatedAt }}
                         </p>
                     </div>
                     <button

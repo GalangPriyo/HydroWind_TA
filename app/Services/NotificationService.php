@@ -56,7 +56,7 @@ class NotificationService
             ],
             'kecepatan_angin' => [
                 'label' => 'Kecepatan Angin',
-                'satuan' => 'm/s',
+                'satuan' => 'km/jam',
                 'nilai' => $this->parseSensorValue($sensor['kecepatan_angin'] ?? '0'),
                 'bahaya' => 1300,
                 'waspada' => 700,
