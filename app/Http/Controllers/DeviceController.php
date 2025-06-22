@@ -25,7 +25,9 @@ class DeviceController extends Controller
             ->paginate(10)
             ->withQueryString(); // Penting agar pagination tetap membawa parameter search
 
-        return Inertia::render('Admin/DaftarAlat/Index', [
+
+
+        return Inertia::render('Admin/Device/Index', [
             'devices' => $devices,
             'filters' => $request->only(['search']),
             'user' => Auth::user(),
@@ -44,7 +46,7 @@ class DeviceController extends Controller
     {
         $device = Device::with('sensors')->findOrFail($id);
 
-        return Inertia::render('Admin/DaftarAlat/Show', [
+        return Inertia::render('Admin/Device/Show', [
             'device' => $device,
             'user' => Auth::user(),
         ]);
@@ -54,7 +56,7 @@ class DeviceController extends Controller
     // Menampilkan form tambah device
     public function createDevice()
     {
-        return Inertia::render('Admin/DaftarAlat/Create', [
+        return Inertia::render('Admin/Device/Create', [
             'user' => Auth::user(),
         ]);
     }
@@ -99,7 +101,7 @@ class DeviceController extends Controller
     public function editDevice($id)
     {
         $device = Device::with('sensors')->findOrFail($id);
-        return Inertia::render('Admin/DaftarAlat/Edit', [
+        return Inertia::render('Admin/Device/Edit', [
             'device' => $device,
             'user' => Auth::user(),
         ]);

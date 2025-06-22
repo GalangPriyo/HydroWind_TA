@@ -2,6 +2,8 @@
 import { Head, router } from "@inertiajs/vue3";
 import { ref, computed, onMounted, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import Swal from "sweetalert2";
+import { throttle } from "lodash";
 
 defineOptions({ layout: AuthenticatedLayout });
 
@@ -19,6 +21,9 @@ const activeNodeIndex = ref(0);
 
 // Keep track of pagination state for each node
 const nodePaginationStates = ref({});
+
+// Reactive state for loading status
+const isLoading = ref(false);
 
 // Form filter dengan default dari props.filters
 const form = ref({
@@ -163,12 +168,16 @@ watch(activeNodeIndex, () => {
     loadActiveNodeData();
 });
 
-function submitFilter() {
-    router.get(route("admin.riwayat"), form.value, {
+const throttledSubmitFilter = throttle(() => {
+    isLoading.value = true;
+    router.get(route("user.riwayat"), form.value, {
         preserveState: true,
-        preserveScroll: true,
-        only: ["sensorData", "stats", "filters"],
+        onFinish: () => (isLoading.value = false),
     });
+}, 1000);
+
+function submitFilter() {
+    throttledSubmitFilter();
 }
 
 function resetFilter() {
@@ -247,7 +256,7 @@ const downloadUrl = computed(() => {
     if (form.value.date_to) params.append("date_to", form.value.date_to);
     if (form.value.node_id) params.append("node_id", form.value.node_id);
 
-    return `${route("admin.riwayat.download")}?${params.toString()}`;
+    return `${route("user.riwayat.download")}?${params.toString()}`;
 });
 
 // Initialize with the first node's data when mounted
@@ -289,20 +298,26 @@ onMounted(() => {
                         </p>
                     </div>
 
-                    <!-- <div class="flex gap-3">
+                    <div class="flex gap-3">
                         <a
                             :href="downloadUrl"
                             class="btn border-2 border-gray-200 bg-green-600 text-white text-sm rounded-xl hover:bg-green-700 transition-all duration-200 font-medium"
                         >
                             <i class="fa-solid fa-download"></i> Download Data
                         </a>
-                    </div> -->
+                        <!-- <button
+                            @click="confirmTruncate"
+                            class="btn border-2 border-gray-200 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700 transition-all duration-200 font-medium"
+                        >
+                            <i class="fa-solid fa-trash-can"></i> Hapus Data
+                        </button> -->
+                    </div>
                 </div>
             </div>
 
             <!-- Filter Form -->
             <div
-                class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden mb-6"
+                class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden mb-6"
             >
                 <form @submit.prevent="submitFilter" class="px-6 pb-6 pt-3">
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -391,7 +406,7 @@ onMounted(() => {
                                 <button
                                     type="button"
                                     @click="resetFilter"
-                                    class="btn btn-sm bg-red-600 hover:bg-red-700 text-white rounded-lg w-1/2"
+                                    class="btn btn-sm bg-white hover:bg-red-500 border border-red-500 rounded-lg w-1/2 text-red-500 hover:text-white transition-colors"
                                 >
                                     <i
                                         class="fa-solid fa-arrow-rotate-left"
@@ -415,7 +430,7 @@ onMounted(() => {
             <div v-if="nodeData.length > 0">
                 <!-- Node Navigation -->
                 <div
-                    class="flex justify-between items-center mb-6 bg-white rounded-2xl shadow border border-gray-100 p-4"
+                    class="flex justify-between items-center mb-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-4"
                 >
                     <button
                         @click="prevNode"
@@ -519,6 +534,45 @@ onMounted(() => {
                                 </tr>
                             </tbody>
                         </table>
+                        <div
+                            class="flex justify-between items-center bg-gray-50 p-3 border-t border-gray-200"
+                        >
+                            <div class="text-sm text-gray-600">
+                                Menampilkan halaman
+                                {{ sensorData.current_page }} dari
+                                {{ sensorData.last_page }}
+                            </div>
+                            <div class="join">
+                                <button
+                                    @click="
+                                        handlePageChange(
+                                            sensorData.current_page - 1
+                                        )
+                                    "
+                                    :disabled="sensorData.current_page === 1"
+                                    class="join-item btn btn-sm"
+                                >
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button class="join-item btn btn-sm">
+                                    {{ sensorData.current_page }}
+                                </button>
+                                <button
+                                    @click="
+                                        handlePageChange(
+                                            sensorData.current_page + 1
+                                        )
+                                    "
+                                    :disabled="
+                                        sensorData.current_page ===
+                                        sensorData.last_page
+                                    "
+                                    class="join-item btn btn-sm"
+                                >
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -535,7 +589,24 @@ onMounted(() => {
                 v-else
                 class="text-center py-16 bg-white rounded-2xl shadow-xl border border-gray-100"
             >
+                <i
+                    class="fas fa-exclamation-triangle text-6xl text-gray-500 mb-2"
+                ></i>
                 <p class="text-gray-500">Tidak ada data yang ditemukan</p>
+            </div>
+        </div>
+        <!-- Tambahkan di template (sebelum </div> penutup) -->
+        <div
+            v-if="isLoading"
+            class="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center"
+        >
+            <div
+                class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center"
+            >
+                <progress
+                    class="progress progress-primary w-56 mb-2"
+                ></progress>
+                <span>Memuat data...</span>
             </div>
         </div>
     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Inertia\Inertia;
 use App\Models\Device;
 use App\Models\Sensor;
@@ -18,106 +19,73 @@ class RiwayatController extends Controller
      */
     public function indexRiwayat(Request $request)
     {
-        // Ambil parameter filter dari request
-        $deviceId = $request->input('device_id');
-        $sensorType = $request->input('sensor_type');
-        $dateFrom = $request->input('date_from');
-        $dateTo = $request->input('date_to');
-        $perPage = $request->input('per_page', 200);
+        $validated = $request->validate([
+            'node_id' => 'nullable|string',
+            'page' => 'nullable|integer|min:1',
+            'device_id' => 'nullable|integer|exists:devices,id',
+            'sensor_type' => 'nullable|string|in:curah_hujan,ketinggian_air,kecepatan_angin,tekanan_udara',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'per_page' => 'nullable|integer|min:1|max:500',
+        ]);
 
-        // Daftar semua perangkat untuk filter
-        $devices = Device::select('id', 'name', 'node_id', 'location')
-            ->where('status', 'active')
+        $devices = Device::query()
+            ->select('id', 'name', 'node_id')
             ->orderBy('name')
             ->get();
 
-        // Query untuk data sensor
-        $query = SensorData::select(
-            'sensor_datas.*',
-            'sensors.name as sensor_name',
-            'devices.name as device_name',
-            'devices.node_id'
-        )
+        $query = SensorData::with(['sensor:id,name,device_id', 'sensor.device:id,name,node_id'])
+            ->select('sensor_datas.id', 'sensor_datas.timestamp', 'sensor_datas.value', 'sensor_datas.sensor_id')
             ->join('sensors', 'sensors.id', '=', 'sensor_datas.sensor_id')
             ->join('devices', 'devices.id', '=', 'sensors.device_id');
 
-        // Filter berdasarkan perangkat
-        if ($deviceId) {
-            $query->where('devices.id', $deviceId);
+        // Filter
+        if ($validated['device_id'] ?? false) {
+            $query->where('devices.id', $validated['device_id']);
         }
 
-        // Filter berdasarkan jenis sensor
-        if ($sensorType) {
-            $query->where('sensors.name', $sensorType);
+        if ($validated['sensor_type'] ?? false) {
+            $query->where('sensors.name', $validated['sensor_type']);
         }
 
-        // Filter berdasarkan rentang tanggal
-        if ($dateFrom) {
-            $query->whereDate('sensor_datas.timestamp', '>=', $dateFrom);
+        if ($validated['date_from'] ?? false) {
+            $query->where('sensor_datas.timestamp', '>=', $validated['date_from'] . ' 00:00:00');
         }
 
-        if ($dateTo) {
-            $query->whereDate('sensor_datas.timestamp', '<=', $dateTo);
+        if ($validated['date_to'] ?? false) {
+            $query->where('sensor_datas.timestamp', '<=', $validated['date_to'] . ' 23:59:59');
         }
 
-        // Urutkan berdasarkan waktu terbaru
-        $query->orderBy('sensor_datas.timestamp', 'desc');
+        $sensorData = $query->orderByDesc('sensor_datas.timestamp')
+            ->paginate($validated['per_page'] ?? 200)
+            ->through(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'timestamp' => Carbon::parse($item->timestamp)
+                        ->timezone('Asia/Jakarta')
+                        ->format('Y-m-d H:i:s'),
+                    'value' => $item->value,
+                    'sensor_name' => $item->sensor->name ?? null,
+                    'device_name' => $item->sensor->device->name ?? null,
+                    'node_id' => $item->sensor->device->node_id ?? null,
+                ];
+            });
 
-        // Paginate hasil
-        $sensorData = $query->paginate($perPage);
-        $sensorData->getCollection()->transform(function ($item) {
-            $item->timestamp = \Carbon\Carbon::parse($item->timestamp)
-                ->timezone('Asia/Jakarta') // konversi ke WIB
-                ->format('Y-m-d H:i:s');
-            return $item;
-        });
-
-        // Query untuk statistik
-        $statsQuery = SensorData::select(
-            'sensors.name as sensor_name',
-            DB::raw('MIN(sensor_datas.value) as min_value'),
-            DB::raw('MAX(sensor_datas.value) as max_value'),
-            DB::raw('AVG(sensor_datas.value) as avg_value'),
-            DB::raw('COUNT(sensor_datas.id) as data_count')
-        )
-            ->join('sensors', 'sensors.id', '=', 'sensor_datas.sensor_id')
-            ->join('devices', 'devices.id', '=', 'sensors.device_id')
-            ->groupBy('sensors.name');
-
-        // Terapkan filter yang sama ke statistik
-        if ($deviceId) {
-            $statsQuery->where('devices.id', $deviceId);
-        }
-
-        if ($sensorType) {
-            $statsQuery->where('sensors.name', $sensorType);
-        }
-
-        if ($dateFrom) {
-            $statsQuery->whereDate('sensor_datas.timestamp', '>=', $dateFrom);
-        }
-
-        if ($dateTo) {
-            $statsQuery->whereDate('sensor_datas.timestamp', '<=', $dateTo);
-        }
-
-        $stats = $statsQuery->get();
-
-        // Kirim data ke Vue component melalui Inertia
-        return Inertia::render(auth()->user()->role === 'admin' ? 'Admin/AdminRiwayat' : 'User/UserRiwayat', [
-            'user' => auth()->user(),
-            'devices' => $devices,
-            'sensorData' => $sensorData,
-            'stats' => $stats,
-            'filters' => [
-                'device_id' => $deviceId,
-                'sensor_type' => $sensorType,
-                'date_from' => $dateFrom,
-                'date_to' => $dateTo,
-                'per_page' => $perPage
+        return Inertia::render(
+            auth()->user()->role === 'admin' ? 'Admin/AdminRiwayat' : 'User/UserRiwayat',
+            [
+                'user' => ['role' => auth()->user()->role],
+                'devices' => $devices,
+                'sensorData' => $sensorData,
+                'filters' => $validated,
+                'meta' => [
+                    'timezone' => 'Asia/Jakarta',
+                    'max_per_page' => 500
+                ]
             ]
-        ]);
+        );
     }
+
 
     /**
      * Download sensor data as Excel file

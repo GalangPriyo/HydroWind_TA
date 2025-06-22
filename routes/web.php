@@ -11,16 +11,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\WhatsappController;
-use App\Http\Controllers\NotificationController;
-
-// Route::get('/', function () {
-//     return Inertia::render('Guest/Welcome', [
-//         'canLogin' => Route::has('login'),
-//         'canRegister' => Route::has('register'),
-//         'laravelVersion' => Application::VERSION,
-//         'phpVersion' => PHP_VERSION,
-//     ]);
-// });
 
 Route::middleware(['auth', 'verified', 'user'])->group(function () {
     Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
@@ -40,7 +30,6 @@ Route::middleware(['auth', 'verified', 'user'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-
 
     //Pengguna
     Route::get('/admin/pengguna', [PenggunaController::class, 'indexPengguna'])->name('admin.pengguna');
@@ -69,24 +58,14 @@ Route::middleware(['auth', 'verified', 'admin'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'indexProfile'])->name('profile.index');
-    Route::post('/profile/password', [ProfileController::class, 'updateProfile'])->name('profile.password.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::delete('/profile', [ProfileController::class, 'destroyProfile'])->name('profile.destroy');
 });
 
-
-
 //GUEST
-//Monitoring
 Route::get('/', [GuestController::class, 'home'])->name('home');
 Route::get('/panduan', [GuestController::class, 'panduan'])->name('panduan');
 Route::get('/monitoring', [GuestController::class, 'monitoring'])->name('monitoring');
 Route::get('/peta', [GuestController::class, 'map'])->name('guest.peta');
-
-
-Route::post('/mqtt/sensor-data', [GuestController::class, 'store']);
-
-
-Route::get('/send-alert', [NotificationController::class, 'sendAlert']);
-Route::get('/send-bulk-alert', [NotificationController::class, 'sendBulkAlert']);
 
 require __DIR__ . '/auth.php';

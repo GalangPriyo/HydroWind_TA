@@ -3,6 +3,7 @@ import { Head, router } from "@inertiajs/vue3";
 import { ref, computed, onMounted, watch } from "vue";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Swal from "sweetalert2";
+import { throttle } from "lodash";
 
 defineOptions({ layout: AuthenticatedLayout });
 
@@ -20,6 +21,9 @@ const activeNodeIndex = ref(0);
 
 // Keep track of pagination state for each node
 const nodePaginationStates = ref({});
+
+// Reactive state for loading status
+const isLoading = ref(false);
 
 // Form filter dengan default dari props.filters
 const form = ref({
@@ -164,12 +168,16 @@ watch(activeNodeIndex, () => {
     loadActiveNodeData();
 });
 
-function submitFilter() {
+const throttledSubmitFilter = throttle(() => {
+    isLoading.value = true;
     router.get(route("admin.riwayat"), form.value, {
         preserveState: true,
-        preserveScroll: true,
-        only: ["sensorData", "stats", "filters"],
+        onFinish: () => (isLoading.value = false),
     });
+}, 1000);
+
+function submitFilter() {
+    throttledSubmitFilter();
 }
 
 function resetFilter() {
@@ -558,6 +566,45 @@ const confirmTruncate = () => {
                                 </tr>
                             </tbody>
                         </table>
+                        <div
+                            class="flex justify-between items-center bg-gray-50 p-3 border-t border-gray-200"
+                        >
+                            <div class="text-sm text-gray-600">
+                                Menampilkan halaman
+                                {{ sensorData.current_page }} dari
+                                {{ sensorData.last_page }}
+                            </div>
+                            <div class="join">
+                                <button
+                                    @click="
+                                        handlePageChange(
+                                            sensorData.current_page - 1
+                                        )
+                                    "
+                                    :disabled="sensorData.current_page === 1"
+                                    class="join-item btn btn-sm"
+                                >
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button class="join-item btn btn-sm">
+                                    {{ sensorData.current_page }}
+                                </button>
+                                <button
+                                    @click="
+                                        handlePageChange(
+                                            sensorData.current_page + 1
+                                        )
+                                    "
+                                    :disabled="
+                                        sensorData.current_page ===
+                                        sensorData.last_page
+                                    "
+                                    class="join-item btn btn-sm"
+                                >
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -578,6 +625,20 @@ const confirmTruncate = () => {
                     class="fas fa-exclamation-triangle text-6xl text-gray-500 mb-2"
                 ></i>
                 <p class="text-gray-500">Tidak ada data yang ditemukan</p>
+            </div>
+        </div>
+        <!-- Tambahkan di template (sebelum </div> penutup) -->
+        <div
+            v-if="isLoading"
+            class="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center"
+        >
+            <div
+                class="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center"
+            >
+                <progress
+                    class="progress progress-primary w-56 mb-2"
+                ></progress>
+                <span>Memuat data...</span>
             </div>
         </div>
     </div>

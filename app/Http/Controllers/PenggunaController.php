@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Inertia\Inertia;
-use App\Models\Pengguna;
 use App\Models\Whatsapp;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,7 +18,7 @@ class PenggunaController extends Controller
     // GET Index Form
     public function indexPengguna(Request $request)
     {
-        $query = Pengguna::where('role', 'user')
+        $query = User::where('role', 'user')
             ->with('whatsapp')
             ->latest();
 
@@ -36,7 +35,7 @@ class PenggunaController extends Controller
 
         $users = $query->paginate(10)->withQueryString(); // Tetap pakai pagination
 
-        return Inertia::render('Admin/DaftarPengguna/Index', [
+        return Inertia::render('Admin/Pengguna/Index', [
             'user' => Auth::user(),
             'users' => $users,
             'search' => $request->search ?? '',
@@ -83,7 +82,7 @@ class PenggunaController extends Controller
     // GET Create Form
     public function createPengguna()
     {
-        return Inertia::render('Admin/DaftarPengguna/Create', [
+        return Inertia::render('Admin/Pengguna/Create', [
             'user' => Auth::user(),
         ]);
     }
@@ -131,7 +130,7 @@ class PenggunaController extends Controller
         $pengguna = User::where('id', $id)->where('role', 'user')->firstOrFail();
         $whatsapp = Whatsapp::where('user_id', $id)->first();
 
-        return Inertia::render('Admin/DaftarPengguna/Edit', [
+        return Inertia::render('Admin/Pengguna/Edit', [
             'pengguna' => $pengguna,
             'whatsapp' => $whatsapp,
             'user' => Auth::user(),

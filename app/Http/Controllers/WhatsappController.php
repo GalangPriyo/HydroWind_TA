@@ -85,17 +85,10 @@ class WhatsappController extends Controller
 
 
         try {
-            $whatsapp = Whatsapp::where('user_id', Auth::id())->first();
-            if ($whatsapp) {
-                $whatsapp->update([
-                    'phone_number' => $request->phone_number
-                ]);
-            } else {
-                Whatsapp::create([
-                    'user_id' => Auth::id(),
-                    'phone_number' => $request->phone_number
-                ]);
-            }
+            Whatsapp::updateOrCreate(
+                ['user_id' => Auth::id()],
+                ['phone_number' => $request->phone_number]
+            );
 
             return redirect()->route('user.dashboard')->with('success', 'Nomor WhatsApp berhasil diperbarui.');
         } catch (\Exception $e) {
@@ -106,14 +99,10 @@ class WhatsappController extends Controller
     public function deleteWhatsapp()
     {
         try {
-            $whatsapp = Whatsapp::where('user_id', Auth::id())->first();
+            $whatsapp = Whatsapp::where('user_id', Auth::id())->firstOrFail();
+            $whatsapp->delete();
 
-            if ($whatsapp) {
-                $whatsapp->delete();
-                return redirect()->route('user.dashboard')->with('success', 'Nomor WhatsApp berhasil dihapus.');
-            }
-
-            return back()->with('error', 'Nomor WhatsApp tidak ditemukan.');
+            return redirect()->route('user.dashboard')->with('success', 'Nomor WhatsApp berhasil dihapus.');
         } catch (\Exception $e) {
             return back()->with('error', 'Terjadi kesalahan saat menghapus nomor WhatsApp.');
         }

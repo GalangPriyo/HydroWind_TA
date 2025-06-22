@@ -46,7 +46,7 @@ const fetchBatteryData = async () => {
 // Inisialisasi polling saat komponen dimount
 onMounted(() => {
     fetchBatteryData();
-    setInterval(fetchBatteryData, 10000); // polling 10 detik
+    setInterval(fetchBatteryData, 600000); // polling 10 menit
     console.log("🔋 Initial battery data:", batteryData.value);
 });
 
