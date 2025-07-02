@@ -9,6 +9,8 @@ class Whatsapp extends Model
 {
     use HasFactory;
 
+    protected $table = 'whatsapps';
+
     protected $fillable = ['user_id', 'phone_number'];
 
     public function user()

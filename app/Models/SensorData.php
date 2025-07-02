@@ -13,9 +13,13 @@ class SensorData extends Model
 
     protected $fillable = ['sensor_id', 'value', 'timestamp'];
 
+    protected $casts = [
+        'timestamp' => 'datetime',
+        'value' => 'float',
+    ];
+
     /**
-     * Relasi ke model Sensor.
-     * Satu data hanya milik satu sensor.
+     * Relasi ke sensor
      */
     public function sensor()
     {

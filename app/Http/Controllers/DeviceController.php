@@ -11,21 +11,40 @@ use Illuminate\Support\Facades\Auth;
 class DeviceController extends Controller
 {
     // Menampilkan halaman daftar device
-    public function index()
+    public function indexDevice(Request $request)
     {
-        $devices = Device::with('sensors')->get(); // Ambil semua device dengan sensor
-        return Inertia::render('Admin/DaftarAlat/Index', [
+        $search = $request->input('search');
+
+        $devices = Device::with('sensors')
+            ->when($search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('node_id', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%");
+            })
+            ->paginate(10)->withQueryString(); // Penting agar pagination tetap membawa parameter search
+
+
+
+        return Inertia::render('Admin/Device/Index', [
             'devices' => $devices,
+            'filters' => $request->only(['search']),
             'user' => Auth::user(),
+            'stats' => [
+                'totalDevices' => Device::count(),
+                'activeDevices' => Device::where('status', 'active')->count(),
+                'inactiveDevices' => Device::where('status', 'inactive')->count(),
+                'maintenanceDevices' => Device::where('status', 'maintenance')->count(),
+            ]
+
         ]);
     }
 
     // Menampilkan detail device dan sensor-sensornya
-    public function show($id)
+    public function showDevice($id)
     {
         $device = Device::with('sensors')->findOrFail($id);
 
-        return Inertia::render('Admin/DaftarAlat/Show', [
+        return Inertia::render('Admin/Device/Show', [
             'device' => $device,
             'user' => Auth::user(),
         ]);
@@ -33,24 +52,25 @@ class DeviceController extends Controller
 
 
     // Menampilkan form tambah device
-    public function create()
+    public function createDevice()
     {
-        return Inertia::render('Admin/DaftarAlat/Create', [
+        return Inertia::render('Admin/Device/Create', [
             'user' => Auth::user(),
         ]);
     }
 
     // Menyimpan device baru + sensor
-    public function store(Request $request)
+    public function storeDevice(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'sensors' => 'required|array|min:1|max:4', // Minimal 1, maksimal 3 sensor
-            'sensors.*.name' => 'required|in:rain_intensity,water_level,wind_speed,wind_direction',
-            'sensors.*.unit' => 'required|string|max:10',
+            'node_id' => 'required|string|max:20|unique:devices,node_id',
+            'status' => 'required|in:active,inactive,maintenance',
+            'sensors' => 'required|array|min:1|max:4',
+            'sensors.*.name' => 'required|in:curah_hujan,ketinggian_air,kecepatan_angin,arah_angin,tekanan_udara',
         ]);
 
         // Simpan Device
@@ -59,6 +79,8 @@ class DeviceController extends Controller
             'location' => $request->location,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'node_id' => $request->node_id,
+            'status' => $request->status,
         ]);
 
         // Simpan Sensor yang Dipilih
@@ -66,25 +88,25 @@ class DeviceController extends Controller
             Sensor::create([
                 'device_id' => $device->id,
                 'name' => $sensor['name'],
-                'unit' => $sensor['unit'],
             ]);
         }
 
-        return redirect()->route('admin.devices')->with('success', 'Device berhasil ditambahkan!');
+        return redirect()->route('admin.devices')
+            ->with('success', "Alat {$device->name} berhasil ditambahkan dengan ID: {$device->node_id}");
     }
 
     // Menampilkan form edit device
-    public function edit($id)
+    public function editDevice($id)
     {
         $device = Device::with('sensors')->findOrFail($id);
-        return Inertia::render('Admin/DaftarAlat/Edit', [
+        return Inertia::render('Admin/Device/Edit', [
             'device' => $device,
             'user' => Auth::user(),
         ]);
     }
 
     // Mengupdate device dan sensor
-    public function update(Request $request, $id)
+    public function updateDevice(Request $request, $id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -93,39 +115,50 @@ class DeviceController extends Controller
             'longitude' => 'nullable|numeric',
             'sensors' => 'required|array|min:1|max:4',
             'sensors.*.id' => 'nullable|exists:sensors,id', // Jika sensor sudah ada
-            'sensors.*.name' => 'required|in:rain_intensity,water_level,wind_speed,wind_direction',
-            'sensors.*.unit' => 'required|string|max:10',
+            'sensors.*.name' => 'required|in:curah_hujan,ketinggian_air,kecepatan_angin,arah_angin,tekanan_udara',
         ]);
 
         $device = Device::findOrFail($id);
         $device->update([
+
             'name' => $request->name,
             'location' => $request->location,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'status' => $request->status,
         ]);
 
         // Update Sensor
         $existingSensorIds = [];
+
         foreach ($request->sensors as $sensor) {
             if (!empty($sensor['id'])) {
                 // Update sensor yang sudah ada
                 $existingSensor = Sensor::findOrFail($sensor['id']);
                 $existingSensor->update([
                     'name' => $sensor['name'],
-                    'unit' => $sensor['unit'],
                 ]);
                 $existingSensorIds[] = $sensor['id'];
             } else {
-                // Tambahkan sensor baru
-                $newSensor = Sensor::create([
-                    'device_id' => $device->id,
-                    'name' => $sensor['name'],
-                    'unit' => $sensor['unit'],
-                ]);
-                $existingSensorIds[] = $newSensor->id;
+                // Cek apakah sensor dengan nama tersebut sudah ada pada device ini
+                $existingSensor = Sensor::where('device_id', $device->id)
+                    ->where('name', $sensor['name'])
+                    ->first();
+
+                if ($existingSensor) {
+                    // Sudah ada, tidak perlu buat baru
+                    $existingSensorIds[] = $existingSensor->id;
+                } else {
+                    // Tambahkan sensor baru
+                    $newSensor = Sensor::create([
+                        'device_id' => $device->id,
+                        'name' => $sensor['name'],
+                    ]);
+                    $existingSensorIds[] = $newSensor->id;
+                }
             }
         }
+
 
         // Hapus sensor yang tidak ada dalam request
         Sensor::where('device_id', $device->id)->whereNotIn('id', $existingSensorIds)->delete();
@@ -134,9 +167,15 @@ class DeviceController extends Controller
     }
 
     // Menghapus device dan sensornya
-    public function destroy($id)
+    public function destroyDevice($id)
     {
         $device = Device::findOrFail($id);
+
+        // Check if device is active
+        if ($device->status === 'active') {
+            return redirect()->route('admin.devices')->with('error', 'Device aktif tidak dapat dihapus!');
+        }
+
         $device->delete(); // Karena ada `onDelete('cascade')`, sensor ikut terhapus
 
         return redirect()->route('admin.devices')->with('success', 'Device berhasil dihapus!');

@@ -1,79 +1,59 @@
 <script setup>
-import { Link } from "@inertiajs/vue3";
-import { ref, onMounted, computed } from "vue";
+import { Link, router, usePage } from "@inertiajs/vue3";
+import { ref, onMounted, computed, onBeforeUnmount, watch } from "vue";
+import Swal from "sweetalert2";
 
 // State
 const darkMode = ref(localStorage.getItem("theme") === "dark");
-const isMinimized = ref(false);
+const isMinimized = ref(
+    localStorage.getItem("sidebarMinimized") === "true" || false
+);
 const time = ref("");
 const day = ref("");
+const isMobile = ref(window.innerWidth <= 768);
+const page = usePage();
 
-// Fungsi Toggle Tema
-const toggleTheme = () => {
-    darkMode.value = !darkMode.value;
-    localStorage.setItem("theme", darkMode.value ? "dark" : "light");
-    document.documentElement.setAttribute(
-        "data-theme",
-        darkMode.value ? "dark" : "light"
-    );
+// Responsive handling
+const handleScreenChange = (e) => {
+    isMobile.value = e.matches;
+    if (isMobile.value) {
+        isMinimized.value = true;
+    }
 };
 
-// Fungsi Toggle Sidebar
+// Active link detection
+const isActive = (href) => {
+    if (href === "/") {
+        return page.url === "/";
+    }
+    return page.url.startsWith(href);
+};
+
+// Toggle sidebar and persist state
 const toggleSidebar = () => {
     isMinimized.value = !isMinimized.value;
+    localStorage.setItem("sidebarMinimized", isMinimized.value);
 };
 
-// Fungsi untuk Memperbarui Waktu
+// Time and date formatting
 const updateTime = () => {
     const now = new Date();
-    const days = [
-        "Minggu",
-        "Senin",
-        "Selasa",
-        "Rabu",
-        "Kamis",
-        "Jumat",
-        "Sabtu",
-    ];
-    const months = [
-        "Januari",
-        "Februari",
-        "Maret",
-        "April",
-        "Mei",
-        "Juni",
-        "Juli",
-        "Agustus",
-        "September",
-        "Oktober",
-        "November",
-        "Desember",
-    ];
-
-    day.value = `${days[now.getDay()]}, ${now.getDate()} ${
-        months[now.getMonth()]
-    } ${now.getFullYear()}`;
-    time.value = now
-        .toLocaleTimeString("id-ID", { hour12: false })
-        .replace(/\./g, ":");
+    const options = {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    };
+    day.value = now.toLocaleDateString("id-ID", options);
+    time.value = now.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+    });
 };
 
-// Ambil data pengguna dari Props
-const props = defineProps({
-    user: Object,
-});
-
-// Lifecycle Hooks
-onMounted(() => {
-    updateTime();
-    setInterval(updateTime, 1000);
-    document.documentElement.setAttribute(
-        "data-theme",
-        darkMode.value ? "dark" : "light"
-    );
-});
-
-// Menu Sidebar berdasarkan Role
+// Menu items based on role
 const menuItems = computed(() => {
     if (props.user?.role === "admin") {
         return [
@@ -92,14 +72,12 @@ const menuItems = computed(() => {
                 link: "/admin/devices",
                 icon: "fa-solid fa-toolbox",
             },
-            // { name: "Riwayat", link: "/admin/history", icon: "fa-database" },
-            { name: "Homepage", link: "/", icon: "fa-regular fa-map" },
             {
-                name: "Logout",
-                link: "/logout",
-                icon: "fa-solid fa-right-from-bracket text-red-500",
-                method: "post",
+                name: "Riwayat",
+                link: "/admin/riwayat",
+                icon: "fa-solid fa-database",
             },
+            { name: "Homepage", link: "/", icon: "fa-regular fa-map" },
         ];
     } else {
         return [
@@ -109,183 +87,335 @@ const menuItems = computed(() => {
                 icon: "fa-solid fa-house",
             },
             {
-                name: "WhatsApp",
-                link: "/user/whatsapp",
-                icon: "fa-solid fa-brands fa-whatsapp",
+                name: "Riwayat",
+                link: "/user/riwayat",
+                icon: "fa-solid fa-database",
             },
-            // { name: "Riwayat", link: "/user/history", icon: "fa-database" },
             { name: "Homepage", link: "/", icon: "fa-regular fa-map" },
-            {
-                name: "Logout",
-                link: "/logout",
-                icon: "fa-solid fa-right-from-bracket text-red-500",
-                method: "post",
-            },
         ];
     }
+});
+
+// Logout confirmation
+const confirmLogout = () => {
+    Swal.fire({
+        title: "Konfirmasi Logout",
+        text: "Apakah Anda yakin ingin keluar dari akun Anda?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Keluar",
+        cancelButtonText: "Batal",
+        customClass: {
+            popup: "rounded-xl",
+            confirmButton: "rounded-lg",
+            cancelButton: "rounded-lg",
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post("/logout");
+        }
+    });
+};
+
+// Lifecycle hooks
+onMounted(() => {
+    updateTime();
+    const timeInterval = setInterval(updateTime, 1000);
+
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    mediaQuery.addEventListener("change", handleScreenChange);
+    handleScreenChange(mediaQuery);
+
+    // Set initial theme
+    document.documentElement.setAttribute(
+        "data-theme",
+        darkMode.value ? "dark" : "light"
+    );
+
+    onBeforeUnmount(() => {
+        clearInterval(timeInterval);
+        mediaQuery.removeEventListener("change", handleScreenChange);
+    });
+});
+
+// Props
+const props = defineProps({
+    user: Object,
 });
 </script>
 
 <template>
-    <div class="flex h-screen bg-base-200">
-        <!-- Sidebar -->
+    <div class="flex h-screen bg-base-100">
+        <!-- Desktop Sidebar -->
         <aside
+            v-if="!isMobile"
             :class="[
-                'bg-base-100 min-h-screen transition-all duration-300 p-4 flex flex-col items-start',
-                isMinimized ? 'w-20' : 'w-64',
+                'bg-primary text-primary-content min-h-screen transition-all duration-300 p-4 flex flex-col z-10',
+                isMinimized ? 'w-16' : 'w-64',
             ]"
         >
-            <!-- Logo & Toggle Sidebar -->
-            <div
-                @click="toggleSidebar"
-                class="flex items-center cursor-pointer"
-            >
-                <img
-                    src="/assets/media/HydroWind.jpeg"
-                    alt="Logo"
-                    class="w-12 h-12 rounded-full transition-all"
-                    :class="{ 'mr-0': isMinimized, 'mr-2': !isMinimized }"
-                />
-                <h2
-                    class="text-xl font-bold transition-all"
-                    :class="{
-                        'opacity-0 w-0': isMinimized,
-                        'opacity-100 w-auto': !isMinimized,
-                    }"
+            <!-- Logo & Toggle -->
+            <div class="flex items-center justify-between mb-6">
+                <div
+                    @click="toggleSidebar"
+                    class="flex items-center cursor-pointer hover:opacity-80 transition-opacity"
                 >
-                    HydroWind
-                </h2>
-            </div>
-
-            <!-- Menu Navigasi -->
-            <nav class="mt-4 space-y-2 w-full">
-                <Link
-                    v-for="item in menuItems"
-                    :key="item.name"
-                    :href="item.link"
-                    :method="item.method || 'get'"
-                    :as="item.method === 'post' ? 'button' : 'a'"
-                    class="flex items-center p-2 rounded hover:bg-base-200 transition-all min-w-[150px]"
-                >
-                    <i :class="`${item.icon} w-6 text-xl text-center`"></i>
-                    <span
-                        class="ml-3 transition-all whitespace-nowrap"
+                    <img
+                        src="/assets/media/HydroWind.jpeg"
+                        alt="Logo"
+                        class="rounded-full object-cover ml-1"
                         :class="{
-                            'opacity-0 w-0 overflow-hidden': isMinimized,
-                            'opacity-100 w-auto': !isMinimized,
-                            'text-red-500': item.name === 'Logout',
+                            'w-6 h-6': isMinimized,
+                            'w-10 h-10': !isMinimized,
+                        }"
+                    />
+                    <h2
+                        class="text-xl font-bold ml-2 transition-all whitespace-nowrap"
+                        :class="{
+                            'opacity-0 w-0': isMinimized,
+                            'opacity-100': !isMinimized,
                         }"
                     >
-                        {{ item.name }}
-                    </span>
-                </Link>
+                        HydroWind
+                    </h2>
+                </div>
+                <button
+                    @click="toggleSidebar"
+                    class="p-1 rounded-full hover:bg-primary-focus transition-all"
+                    :class="{ 'ml-auto': isMinimized }"
+                ></button>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="flex-1 flex flex-col space-y-1 w-full overflow-y-auto">
+                <template v-for="item in menuItems" :key="item.name">
+                    <Link
+                        :href="item.link"
+                        :method="item.method || 'get'"
+                        :as="item.method === 'post' ? 'button' : 'a'"
+                        class="flex items-center p-2 rounded-lg transition-all"
+                        :class="[
+                            isActive(item.link)
+                                ? 'bg-white/10 text-white font-bold'
+                                : 'hover:hover:bg-white/10 hover:text-primary-content',
+                            item.class,
+                        ]"
+                    >
+                        <i :class="`${item.icon} text-lg w-6 text-center`"></i>
+                        <span
+                            class="ml-3 transition-all whitespace-nowrap"
+                            :class="{
+                                'opacity-0 w-0': isMinimized,
+                                'opacity-100': !isMinimized,
+                            }"
+                        >
+                            {{ item.name }}
+                        </span>
+                    </Link>
+                </template>
             </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="pt-2 border-t border-primary-focus mt-auto">
+                <button
+                    @click="confirmLogout"
+                    class="flex items-center gap-2 px-2 py-2 text-error hover:bg-error/10 w-full rounded-lg justify-left transition-all"
+                >
+                    <i
+                        class="fa-solid fa-right-from-bracket w-4 text-center text-error text-lg"
+                    ></i>
+                    <span
+                        v-show="!isMinimized"
+                        class="ml-2 text-base font-medium"
+                    >
+                        Logout
+                    </span>
+                </button>
+            </div>
         </aside>
 
-        <!-- Konten Utama -->
-        <div class="flex-1 flex flex-col">
-            <!-- Navbar -->
-            <nav class="bg-base-100 p-4 flex justify-between items-center">
-                <!-- Kiri: Tanggal & Waktu -->
-                <div class="flex items-center gap-4 text-md">
-                    <span>
-                        <i class="fa-regular fa-calendar mr-1"></i> {{ day }}
-                        <i class="fa-regular fa-clock ml-2"></i> {{ time }}
-                    </span>
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navigation -->
+            <nav class="bg-base-100 shadow-lg py-2 px-4 flex items-center">
+                <!-- Mobile Toggle -->
+                <button class="md:hidden transition-all">
+                    <img
+                        src="/assets/media/HydroWind.jpeg"
+                        alt="Logo"
+                        class="w-8 h-8 rounded-full object-cover ml-1"
+                    />
+                </button>
+
+                <!-- Date & Time -->
+                <div
+                    class="hidden md:flex items-center gap-2 text-sm text-base-content"
+                >
+                    <div class="flex items-center">
+                        <i class="fa-regular fa-calendar mr-1"></i>
+                        <span>{{ day }}</span>
+                    </div>
+                    <div class="flex items-center ml-2">
+                        <i class="fa-regular fa-clock mr-1"></i>
+                        <span>{{ time }}</span>
+                    </div>
                 </div>
 
-                <!-- Kanan: Tema, Nama Akun, & Profil -->
-                <div class="flex items-center gap-2">
-                    <!-- Toggle Tema -->
-                    <!-- <button
-                        type="button"
-                        class="btn-sm btn-ghost hover:bg-transparent"
+                <!-- Mobile Title -->
+                <div
+                    v-if="isMobile"
+                    class="mx-auto text-lg font-semibold text-base-content"
+                >
+                    HydroWind
+                </div>
+
+                <!-- User Profile -->
+                <div class="ml-0 md:ml-auto flex items-center gap-3">
+                    <span
+                        class="hidden md:block text-sm font-medium text-base-content"
                     >
-                        <label class="inline-flex items-center relative">
-                            <input
-                                class="peer hidden"
-                                id="toggle"
-                                type="checkbox"
-                                @click="toggleTheme"
-                            />
-                            <div
-                                class="relative w-[60px] h-[28px] bg-white peer-checked:bg-zinc-500 rounded-full after:absolute after:content-[''] after:w-[20px] after:h-[20px] after:bg-gradient-to-r from-orange-500 to-yellow-400 peer-checked:after:from-zinc-900 peer-checked:after:to-zinc-900 after:rounded-full after:top-[4px] after:left-[4px] active:after:w-[22px] peer-checked:after:left-[36px] peer-checked:after:translate-x-0 shadow-sm duration-300 after:duration-300 after:shadow-md"
-                            ></div>
-                            <svg
-                                height="0"
-                                width="80"
-                                viewBox="0 0 24 24"
-                                data-name="Layer 1"
-                                id="Layer_1"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="fill-white peer-checked:opacity-60 absolute w-4 h-4 left-[6px]"
-                            >
-                                <path
-                                    d="M12,17c-2.76,0-5-2.24-5-5s2.24-5,5-5,5,2.24,5,5-2.24,5-5,5ZM13,0h-2V5h2V0Zm0,19h-2v5h2v-5ZM5,11H0v2H5v-2Zm19,0h-5v2h5v-2Zm-2.81-6.78l-1.41-1.41-3.54,3.54,1.41,1.41,3.54-3.54ZM7.76,17.66l-1.41-1.41-3.54,3.54,1.41,1.41,3.54-3.54Zm0-11.31l-3.54-3.54-1.41,1.41,3.54,3.54,1.41-1.41Zm13.44,13.44l-3.54-3.54-1.41,1.41,3.54,3.54,1.41-1.41Z"
-                                ></path>
-                            </svg>
-                            <svg
-                                height="512"
-                                width="512"
-                                viewBox="0 0 24 24"
-                                data-name="Layer 1"
-                                id="Layer_1"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="fill-black opacity-60 peer-checked:opacity-70 peer-checked:fill-white absolute w-4 h-4 right-[6px]"
-                            >
-                                <path
-                                    d="M12.009,24A12.067,12.067,0,0,1,.075,10.725,12.121,12.121,0,0,1,10.1.152a13,13,0,0,1,5.03.206,2.5,2.5,0,0,1,1.8,1.8,2.47,2.47,0,0,1-.7,2.425c-4.559,4.168-4.165,10.645.807,14.412h0a2.5,2.5,0,0,1-.7,4.319A13.875,13.875,0,0,1,12.009,24Zm.074-22a10.776,10.776,0,0,0-1.675.127,10.1,10.1,0,0,0-8.344,8.8A9.928,9.928,0,0,0,4.581,18.7a10.473,10.473,0,0,0,11.093,2.734.5.5,0,0,0,.138-.856h0C9.883,16.1,9.417,8.087,14.865,3.124a.459.459,0,0,0,.127-.465.491.491,0,0,0-.356-.362A10.68,10.68,0,0,0,12.083,2ZM20.5,12a1,1,0,0,1-.97-.757l-.358-1.43L17.74,9.428a1,1,0,0,1,.035-1.94l1.4-.325.351-1.406a1,1,0,0,1,1.94,0l.355,1.418,1.418.355a1,1,0,0,1,0,1.94l-1.418.355-.355,1.418A1,1,0,0,1,20.5,12ZM16,14a1,1,0,0,0,2,0A1,1,0,0,0,16,14Zm6,4a1,1,0,0,0,2,0A1,1,0,0,0,22,18Z"
-                                ></path>
-                            </svg>
-                        </label>
-                    </button> -->
+                        {{ user.name }}
+                    </span>
 
-                    <!-- Nama Akun -->
-                    <span class="text-md">{{ props.user.name }}</span>
-
-                    <!-- Dropdown Profil -->
                     <div class="dropdown dropdown-end">
                         <button
                             tabindex="0"
-                            class="p-1 rounded hover:bg-base-300 transition-all flex items-center"
+                            class="flex items-center gap-2 p-1 rounded-full hover:bg-base-200 transition-all"
                         >
-                            <div class="w-10 h-10 rounded-full overflow-hidden">
+                            <div
+                                class="w-8 h-8 rounded-full overflow-hidden border-2 border-primary"
+                            >
                                 <img
                                     src="/assets/media/profil.jpg"
                                     alt="Profil"
                                     class="w-full h-full object-cover"
                                 />
                             </div>
+                            <i
+                                class="fa-solid fa-chevron-down text-xs hidden md:block"
+                            ></i>
                         </button>
+
                         <ul
                             tabindex="0"
-                            class="mt-3 z-10 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-40"
+                            class="mt-2 z-20 py-2 shadow-lg menu menu-sm dropdown-content bg-base-100 rounded-box w-56 border border-base-200"
                         >
-                            <li>
-                                <Link
-                                    href="/profile"
-                                    class="block px-4 py-2 hover:bg-base-200"
-                                    >Profil</Link
-                                >
+                            <li
+                                class="md:hidden px-4 py-2 border-b border-base-200"
+                            >
+                                <div class="font-medium">{{ user.name }}</div>
+                                <div class="text-xs opacity-70">
+                                    <i class="fa-regular fa-calendar mr-1"></i>
+                                    {{ day }}
+                                </div>
                             </li>
                             <li>
                                 <Link
-                                    href="/logout"
-                                    method="post"
-                                    as="button"
-                                    class="block px-4 py-2 text-red-500 hover:bg-red-100"
-                                    >Logout</Link
+                                    href="/profile"
+                                    class="flex items-center gap-2 px-4 py-2 hover:bg-base-200"
                                 >
+                                    <i
+                                        class="fa-solid fa-user w-4 text-center"
+                                    ></i>
+                                    <span>Profil</span>
+                                </Link>
+                            </li>
+                            <li>
+                                <button
+                                    @click="confirmLogout"
+                                    class="flex items-center gap-2 px-4 py-2 text-error hover:bg-error/10"
+                                >
+                                    <i
+                                        class="fa-solid fa-right-from-bracket w-4 text-center"
+                                    ></i>
+                                    <span>Logout</span>
+                                </button>
                             </li>
                         </ul>
                     </div>
                 </div>
             </nav>
 
-            <!-- Konten Halaman -->
-            <main class="p-6 flex-1 overflow-auto">
-                <slot />
+            <!-- Page Content -->
+            <main class="flex-1 overflow-auto p-4 md:p-6 bg-base-100/50">
+                <div class="max-w-full mx-auto">
+                    <slot />
+                </div>
             </main>
+
+            <!-- Mobile Bottom Navbar -->
+            <nav
+                v-if="isMobile"
+                class="md:hidden fixed bottom-0 left-0 right-0 bg-primary text-primary-content shadow-lg z-20"
+            >
+                <div class="flex justify-around">
+                    <template v-for="item in menuItems" :key="item.name">
+                        <Link
+                            :href="item.link"
+                            :method="item.method || 'get'"
+                            :as="item.method === 'post' ? 'button' : 'a'"
+                            class="flex flex-col items-center justify-center p-3 w-full transition-all"
+                            :class="[
+                                isActive(item.link)
+                                    ? 'bg-white/10 text-white font-bold'
+                                    : 'hover:bg-white/10',
+                            ]"
+                        >
+                            <i :class="`${item.icon} text-lg`"></i>
+                        </Link>
+                    </template>
+                </div>
+            </nav>
         </div>
     </div>
 </template>
+
+<style>
+/* Smooth transitions */
+.sidebar-transition {
+    transition: all 0.3s ease;
+}
+
+/* Custom scrollbar for sidebar */
+aside nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+aside nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+aside nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+aside nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Animation for sidebar toggle */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sidebar-text {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Adjust main content padding when bottom navbar is present */
+@media (max-width: 768px) {
+    main {
+        padding-bottom: 70px !important;
+    }
+}
+</style>

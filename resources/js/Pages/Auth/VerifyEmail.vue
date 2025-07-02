@@ -22,38 +22,66 @@ const verificationLinkSent = computed(
 
 <template>
     <Head title="Email Verification" />
-    <div class="min-h-screen pt-20">
-        <div class="mb-4 text-sm text-gray-600">
-            Thanks for signing up! Before getting started, could you verify your
-            email address by clicking on the link we just emailed to you? If you
-            didn't receive the email, we will gladly send you another.
-        </div>
 
+    <div class="min-h-screen bg-blue-50 flex items-center justify-center p-4">
         <div
-            class="mb-4 text-sm font-medium text-green-600"
-            v-if="verificationLinkSent"
+            class="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden"
         >
-            A new verification link has been sent to the email address you
-            provided during registration.
-        </div>
+            <div class="p-8 text-center">
+                <div class="flex justify-center mb-6">
+                    <img
+                        src="/assets/media/verifikasi1.png"
+                        alt="Email Verification"
+                        class="w-2/3 object-contain"
+                    />
+                </div>
 
-        <form @submit.prevent="submit">
-            <div class="mt-4 flex items-center justify-between">
-                <PrimaryButton
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Resend Verification Email
-                </PrimaryButton>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">
+                    Verifikasi Email Anda
+                </h1>
 
-                <Link
-                    :href="route('logout')"
-                    method="post"
-                    as="button"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >Log Out</Link
+                <p class="text-gray-600 mb-6">
+                    Terima kasih telah mendaftar! Sebelum melanjutkan, silakan
+                    verifikasi alamat email Anda dengan mengklik tautan yang
+                    kami kirimkan.
+                </p>
+
+                <div
+                    v-if="verificationLinkSent"
+                    class="mb-6 p-3 bg-green-50 text-green-700 rounded-lg text-sm"
                 >
+                    Link verifikasi baru telah dikirim ke email Anda.
+                </div>
+
+                <form @submit.prevent="submit" class="space-y-4">
+                    <PrimaryButton
+                        :class="{ 'opacity-50': form.processing }"
+                        :disabled="form.processing"
+                        class="w-full justify-center py-3"
+                    >
+                        <span v-if="!form.processing"
+                            >Kirim Ulang Email Verifikasi</span
+                        >
+                        <span v-else>Mengirim...</span>
+                    </PrimaryButton>
+
+                    <div class="pt-2 border-t border-gray-100">
+                        <Link
+                            :href="route('logout')"
+                            method="post"
+                            as="button"
+                            class="w-full text-center text-gray-600 hover:text-gray-800 font-medium"
+                        >
+                            Keluar
+                        </Link>
+                    </div>
+                </form>
+
+                <p class="mt-6 text-xs text-gray-500">
+                    Jika Anda tidak menerima email, periksa folder spam atau
+                    hubungi dukungan kami.
+                </p>
             </div>
-        </form>
+        </div>
     </div>
 </template>

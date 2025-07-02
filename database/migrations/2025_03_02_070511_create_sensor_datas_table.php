@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('sensor_datas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sensor_id')->constrained('sensors')->onDelete('cascade');
-            $table->float('value');
-            $table->timestamp('timestamp')->default(now());
+            $table->decimal('value', 8, 3);
+            $table->timestamp('timestamp');
             $table->timestamps();
         });
     }

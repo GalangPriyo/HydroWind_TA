@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
 class VerifyEmailController extends Controller
 {
@@ -15,24 +16,21 @@ class VerifyEmailController extends Controller
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
         if ($request->user()->hasVerifiedEmail()) {
-            return $this->redirectToDashboard($request);
+            return match ($request->user()->role) {
+                'admin' => redirect()->route('admin.dashboard'),
+                'user' => redirect()->route('user.dashboard'),
+            };
         }
 
         if ($request->user()->markEmailAsVerified()) {
             event(new Verified($request->user()));
         }
 
-        return $this->redirectToDashboard($request);
-    }
+        // Logout setelah berhasil verifikasi
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-    /**
-     * Redirect user to their respective dashboard based on role.
-     */
-    protected function redirectToDashboard(EmailVerificationRequest $request): RedirectResponse
-    {
-        return match ($request->user()->role) {
-            'admin' => redirect()->intended(route('admin.dashboard') . '?verified=1'),
-            'user' => redirect()->intended(route('user.dashboard') . '?verified=1'),
-        };
+        return redirect()->route('login')->with('status', 'Email berhasil diverifikasi. Silakan login.');
     }
 }

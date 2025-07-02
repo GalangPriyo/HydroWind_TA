@@ -9,23 +9,28 @@ class Sensor extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['device_id', 'name', 'unit'];
+    protected $table = 'sensors';
+
+    protected $fillable = ['device_id', 'name'];
 
     /**
-     * Relasi ke model Device.
-     * Satu sensor hanya dimiliki oleh satu device.
+     * Relasi ke device
      */
     public function device()
     {
         return $this->belongsTo(Device::class);
     }
 
-    /**
-     * Relasi ke model SensorData.
-     * Satu sensor dapat memiliki banyak data.
-     */
     public function sensorData()
     {
         return $this->hasMany(SensorData::class);
+    }
+
+    /**
+     * Mendapatkan data sensor terbaru
+     */
+    public function latestData()
+    {
+        return $this->hasOne(SensorData::class)->latestOfMany('timestamp');
     }
 }

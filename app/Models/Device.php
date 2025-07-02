@@ -2,26 +2,36 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Device extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'location', 'latitude', 'longitude', 'token'];
+    protected $table = 'devices';
 
-    protected static function boot()
-    {
-        parent::boot();
-        static::creating(function ($device) {
-            $device->token = Str::random(32); // Generate token otomatis
-        });
-    }
+    protected $fillable = ['name', 'location', 'latitude', 'longitude', 'node_id', 'status'];
 
+    /**
+     * Relasi ke sensor
+     */
     public function sensors()
     {
         return $this->hasMany(Sensor::class);
+    }
+
+    /**
+     * Relasi ke semua data sensor melalui relasi sensor
+     */
+    public function sensorData()
+    {
+        return $this->hasManyThrough(SensorData::class, Sensor::class);
+    }
+
+    public function latestBattery()
+    {
+        return $this->hasOne(Battery::class)->latestOfMany();
     }
 }

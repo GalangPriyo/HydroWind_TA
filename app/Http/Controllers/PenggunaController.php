@@ -4,31 +4,92 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Inertia\Inertia;
-use App\Models\Pengguna;
 use App\Models\Whatsapp;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Response;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class PenggunaController extends Controller
 {
     // GET Index Form
-    public function indexPengguna()
+    public function indexPengguna(Request $request)
     {
-        $users = Pengguna::where('role', 'user')
+        $query = User::where('role', 'user')
             ->with('whatsapp')
-            ->get();
+            ->latest();
 
-        return Inertia::render('Admin/DaftarPengguna/Index', [
+        if ($request->has('search')) {
+            $search = strtolower($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('whatsapp', function ($q2) use ($search) {
+                        $q2->whereRaw('LOWER(phone_number) LIKE ?', ["%{$search}%"]);
+                    });
+            });
+        }
+
+        $users = $query->paginate(10)->withQueryString(); // Tetap pakai pagination
+
+        return Inertia::render('Admin/Pengguna/Index', [
+            'user' => Auth::user(),
             'users' => $users,
-            'user' => Auth::user()
+            'search' => $request->search ?? '',
+            'stats' => [
+                'totalUsers' => User::where('role', 'user')->count(),
+                'usersWithWhatsapp' => User::whereHas('whatsapp')->count(),
+            ],
         ]);
     }
+
+
+    public function downloadPengguna()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set judul kolom
+        $sheet->setCellValue('A1', 'Nama');
+        $sheet->setCellValue('B1', 'Email');
+        $sheet->setCellValue('C1', 'Nomor WA');
+
+        // Ambil data
+        $users = User::with('whatsapp')
+            ->where('role', 'user')
+            ->get();
+
+        $row = 2;
+        foreach ($users as $user) {
+            $sheet->setCellValue('A' . $row, $user->name);
+            $sheet->setCellValue('B' . $row, $user->email);
+            $sheet->setCellValueExplicit(
+                'C' . $row,
+                $user->whatsapp->phone_number ?? '-',
+                DataType::TYPE_STRING
+            );
+            $row++;
+        }
+
+        // Simpan ke file sementara
+        $fileName = 'daftar_pengguna.xlsx';
+        $temp_file = tempnam(sys_get_temp_dir(), $fileName);
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($temp_file);
+
+        // Kirim response download
+        return response()->download($temp_file, $fileName)->deleteFileAfterSend(true);
+    }
+
 
     // GET Create Form
     public function createPengguna()
     {
-        return Inertia::render('Admin/DaftarPengguna/Create', [
+        return Inertia::render('Admin/Pengguna/Create', [
             'user' => Auth::user(),
         ]);
     }
@@ -39,8 +100,17 @@ class PenggunaController extends Controller
         // Validasi input
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone_number' => 'required|string|max:15|unique:whatsapps,phone_number',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'phone_number' => [
+                'required',
+                'string',
+                'regex:/^62[0-9]{8,13}$/',
+                'unique:whatsapps,phone_number',
+            ],
+        ], [
+            'phone_number.regex' => 'Nomor harus diawali dengan 62 dan jumlah antara 10 - 15 digit.',
+            'phone_number.unique' => 'Nomor ini sudah terdaftar.',
+            'email.unique' => 'Email ini sudah digunakan.',
         ]);
 
         // Buat user baru dengan password default & akun terverifikasi
@@ -49,7 +119,7 @@ class PenggunaController extends Controller
             'email' => $request->email,
             'password' => Hash::make('12345678'), // Password default
             'role' => 'user', // Role otomatis user
-            'email_verified_at' => Auth::user()->role === 'admin' ? now() : null, // Otomatis terverifikasi
+            'email_verified_at' => now() // Otomatis terverifikasi
         ]);
 
         // Simpan nomor WhatsApp terkait user yang baru dibuat
@@ -67,7 +137,7 @@ class PenggunaController extends Controller
         $pengguna = User::where('id', $id)->where('role', 'user')->firstOrFail();
         $whatsapp = Whatsapp::where('user_id', $id)->first();
 
-        return Inertia::render('Admin/DaftarPengguna/Edit', [
+        return Inertia::render('Admin/Pengguna/Edit', [
             'pengguna' => $pengguna,
             'whatsapp' => $whatsapp,
             'user' => Auth::user(),
@@ -78,9 +148,19 @@ class PenggunaController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'phone_number' => 'nullable|string|unique:whatsapps,phone_number,' . $id . ',user_id',
+            'email' => 'required|email|max:255|unique:users,email,' . $id,
+            'phone_number' => [
+                'required',
+                'string',
+                'regex:/^62[0-9]{8,13}$/',
+                Rule::unique('whatsapps', 'phone_number')->ignore($id, 'user_id'),
+            ],
+        ], [
+            'phone_number.regex' => 'Nomor harus diawali dengan 62 dan jumlah antara 10 - 15 digit.',
+            'phone_number.unique' => 'Nomor ini sudah terdaftar.',
+            'email.unique' => 'Email ini sudah digunakan.',
         ]);
+
 
         $pengguna = User::where('id', $id)->where('role', 'user')->firstOrFail();
         $pengguna->update([
