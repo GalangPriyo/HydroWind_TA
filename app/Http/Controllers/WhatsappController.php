@@ -10,17 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 class WhatsappController extends Controller
 {
-    // FITUR WHATSAPP
-    // GET Index Form
-    // public function indexWhatsapp()
-    // {
-    //     $whatsapp = Whatsapp::where('user_id', Auth::id())->first();
-
-    //     return Inertia::render('User/Whatsapp/Index', [
-    //         'whatsapp' => $whatsapp,
-    //         'user' => Auth::user()
-    //     ]);
-    // }
 
     // GET Create Whatsapp
     public function createWhatsapp()

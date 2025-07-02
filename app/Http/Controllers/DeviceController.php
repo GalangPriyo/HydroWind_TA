@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Device;
 use App\Models\Sensor;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -22,8 +21,7 @@ class DeviceController extends Controller
                     ->orWhere('node_id', 'like', "%{$search}%")
                     ->orWhere('location', 'like', "%{$search}%");
             })
-            ->paginate(10)
-            ->withQueryString(); // Penting agar pagination tetap membawa parameter search
+            ->paginate(10)->withQueryString(); // Penting agar pagination tetap membawa parameter search
 
 
 
@@ -69,9 +67,9 @@ class DeviceController extends Controller
             'location' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'node_id' => 'nullable|string|max:20|unique:devices,node_id',
+            'node_id' => 'required|string|max:20|unique:devices,node_id',
             'status' => 'required|in:active,inactive,maintenance',
-            'sensors' => 'required|array|min:1|max:4', // 1-5 sensor
+            'sensors' => 'required|array|min:1|max:4',
             'sensors.*.name' => 'required|in:curah_hujan,ketinggian_air,kecepatan_angin,arah_angin,tekanan_udara',
         ]);
 

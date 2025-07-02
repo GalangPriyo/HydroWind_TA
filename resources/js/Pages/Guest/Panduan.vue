@@ -341,7 +341,25 @@ const statusLabel = (status) => {
                     </h2>
                 </div>
 
+                <!-- Tambahkan kondisi jika tidak ada devices -->
                 <div
+                    v-if="devices.length === 0"
+                    class="bg-white rounded-xl shadow-md p-6 text-center border border-gray-100"
+                >
+                    <i
+                        class="fas fa-exclamation-circle text-blue-600 text-6xl mb-3"
+                    ></i>
+                    <h3 class="text-xl font-medium text-gray-700 mb-2">
+                        Tidak Ada Perangkat Terdaftar
+                    </h3>
+                    <p class="text-gray-500">
+                        Saat ini belum ada perangkat monitoring yang terdaftar
+                        dalam sistem.
+                    </p>
+                </div>
+
+                <div
+                    v-else
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
                     <div

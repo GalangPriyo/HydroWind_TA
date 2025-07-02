@@ -9,18 +9,9 @@ class Sensor extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['device_id', 'name'];
+    protected $table = 'sensors';
 
-    /**
-     * Nilai sensor yang valid
-     */
-    public static $validSensorTypes = [
-        'curah_hujan',
-        'ketinggian_air',
-        'kecepatan_angin',
-        'arah_angin',
-        'tekanan_udara'
-    ];
+    protected $fillable = ['device_id', 'name'];
 
     /**
      * Relasi ke device
@@ -30,10 +21,7 @@ class Sensor extends Model
         return $this->belongsTo(Device::class);
     }
 
-    /**
-     * Relasi ke data sensor
-     */
-    public function data()
+    public function sensorData()
     {
         return $this->hasMany(SensorData::class);
     }
@@ -41,11 +29,6 @@ class Sensor extends Model
     /**
      * Mendapatkan data sensor terbaru
      */
-    public function getLatestDataAttribute()
-    {
-        return $this->data()->latest('timestamp')->first();
-    }
-
     public function latestData()
     {
         return $this->hasOne(SensorData::class)->latestOfMany('timestamp');

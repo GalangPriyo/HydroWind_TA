@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full max-w-xs">
+    <div class="w-full max-w-sm">
         <div class="bg-white rounded-xl shadow-md overflow-hidden">
             <div class="bg-primary py-4 px-6">
                 <h2

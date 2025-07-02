@@ -3,14 +3,8 @@
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
-use Inertia\Response;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Redirect;
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class ProfileController extends Controller
 {
@@ -26,9 +20,14 @@ class ProfileController extends Controller
     {
         $request->validate([
             'current_password' => ['required', 'current_password'],
-            'new_password' => ['required', 'min:8'],
+            'new_password' => ['required', 'min:8', 'different:current_password'],
             'confirm_password' => ['same:new_password'],
         ]);
+
+        // Tambahan: pastikan password baru juga tidak sama dengan yang di-hash sekarang (lebih aman)
+        if (Hash::check($request->new_password, $request->user()->password)) {
+            return back()->withErrors(['new_password' => 'Password baru tidak boleh sama dengan password lama.']);
+        }
 
         $request->user()->update([
             'password' => Hash::make($request->new_password),

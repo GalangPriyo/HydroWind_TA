@@ -40,7 +40,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended($user->role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
         }
 
-        return back()->withErrors(['email' => 'Email atau password salah']);
+        return back()->withErrors(['email' => 'Email atau password salah', 'password' => 'Email atau password salah']);
     }
 
     /**

@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('location');
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
-            $table->string('token', 64)->unique();
             $table->enum('status', ['active', 'inactive', 'maintenance'])->default('active');
             $table->timestamps();
         });

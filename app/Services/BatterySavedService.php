@@ -25,9 +25,7 @@ class BatterySavedService
         Battery::updateOrCreate(
             ['device_id' => $device->id],
             [
-                'level' => $payload['baterai']['level'],
-                'charging' => $payload['baterai']['charging'],
-                'temperature' => $payload['baterai']['temperature'],
+                'level' => $payload['baterai']['level']
             ]
         );
 

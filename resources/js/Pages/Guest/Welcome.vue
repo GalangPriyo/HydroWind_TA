@@ -18,10 +18,10 @@ const activeNodeIndex = ref(0);
 
 const classifyStatus = (value, type) => {
     const thresholds = {
-        curah_hujan: { bahaya: 1100, waspada: 500 },
-        ketinggian_air: { bahaya: 120, waspada: 60 },
-        kecepatan_angin: { bahaya: 13, waspada: 7 },
-        tekanan_udara: { bahaya: 1000, waspada: 1010 },
+        curah_hujan: { bahaya: 150, waspada: 100 },
+        ketinggian_air: { bahaya: 200, waspada: 150 },
+        kecepatan_angin: { bahaya: 50, waspada: 38 },
+        // tekanan_udara: { bahaya: 1000, waspada: 1010 },
     };
 
     if (value >= thresholds[type].bahaya) return "bahaya";
@@ -87,6 +87,12 @@ const handleMQTTData = (payload) => {
     const validSensorNames = validSensorsPerNode[payload.node_id];
     if (!validSensorNames) return;
 
+    const displaySensorNames = [
+        "curah_hujan",
+        "ketinggian_air",
+        "kecepatan_angin",
+    ];
+
     const updatedAt =
         payload.timestamp ||
         new Date().toLocaleTimeString("en-GB", {
@@ -99,7 +105,11 @@ const handleMQTTData = (payload) => {
     const sensors = {};
 
     for (const [key, val] of Object.entries(payload.sensor)) {
-        if (!validSensorNames.includes(key)) continue;
+        if (
+            !validSensorNames.includes(key) ||
+            !displaySensorNames.includes(key)
+        )
+            continue;
 
         const numericValue = parseFloat(
             val?.toString().replace(/[^0-9.]/g, "") || "0"
@@ -175,7 +185,7 @@ onUnmounted(() => {
                     class="text-lg font-extrabold text-primary sm:text-xl md:text-2xl"
                 >
                     <span
-                        class="block text-blue-700 text-3xl mb-2 md:text-5xl sm:text-4xl"
+                        class="block text-blue-700 text-3xl mb-2 md:text-5xl sm:text-4xl xl:text-6xl"
                     >
                         HydroWind
                     </span>
@@ -198,7 +208,7 @@ onUnmounted(() => {
                 <div
                     class="w-56 h-56 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"
                 >
-                    <span class="text-9xl text-blue-300"
+                    <span class="text-9xl text-blue-600"
                         ><i class="fa-solid fa-satellite-dish"></i
                     ></span>
                 </div>
@@ -225,16 +235,24 @@ onUnmounted(() => {
                         </p>
                     </div>
                     <div class="flex flex-wrap justify-center gap-6">
-                        <StatusCard
-                            v-for="(sensor, type) in node.sensors"
-                            :key="type"
-                            :type="type"
-                            :data="{
-                                value: sensor.value,
-                                status: sensor.status,
-                                location: node.name,
-                            }"
-                        />
+                        <template v-for="(sensor, type) in node.sensors">
+                            <StatusCard
+                                v-if="
+                                    [
+                                        'curah_hujan',
+                                        'ketinggian_air',
+                                        'kecepatan_angin',
+                                    ].includes(type)
+                                "
+                                :key="type"
+                                :type="type"
+                                :data="{
+                                    value: sensor.value,
+                                    status: sensor.status,
+                                    location: node.name,
+                                }"
+                            />
+                        </template>
                     </div>
                 </div>
             </div>
@@ -270,17 +288,27 @@ onUnmounted(() => {
                     </button>
                 </div>
                 <div class="flex flex-wrap justify-center gap-6">
-                    <StatusCard
+                    <template
                         v-for="(sensorData, sensorType) in activeNode[1]
                             .sensors"
-                        :key="sensorType"
-                        :type="sensorType"
-                        :data="{
-                            value: sensorData.value,
-                            status: sensorData.status,
-                            location: activeNode[1].name,
-                        }"
-                    />
+                    >
+                        <StatusCard
+                            v-if="
+                                [
+                                    'curah_hujan',
+                                    'ketinggian_air',
+                                    'kecepatan_angin',
+                                ].includes(sensorType)
+                            "
+                            :key="sensorType"
+                            :type="sensorType"
+                            :data="{
+                                value: sensorData.value,
+                                status: sensorData.status,
+                                location: activeNode[1].name,
+                            }"
+                        />
+                    </template>
                 </div>
             </div>
         </div>

@@ -127,12 +127,6 @@ const store = () => {
                                     ></div>
                                 </div>
                                 <div
-                                    class="mt-2 flex items-center text-xs text-gray-500"
-                                >
-                                    Kosongkan untuk generate otomatis (NODE-001,
-                                    NODE-002, dst)
-                                </div>
-                                <div
                                     v-if="errors.node_id"
                                     class="mt-2 flex items-center text-sm text-red-600"
                                 >

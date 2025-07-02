@@ -29,102 +29,147 @@ class NotificationService
         $sensor = $payload['sensor'];
         $timestamp = $payload['timestamp'];
 
-        // Ambil data device
         $device = Device::where('node_id', $nodeId)->first();
         if (!$device) {
             Log::warning("Node ID $nodeId tidak ditemukan di tabel devices.");
             return;
         }
 
-        // Ambil dan parsing nilai sensor
         $dataSensor = [
             'curah_hujan' => [
                 'label' => 'Curah Hujan',
                 'satuan' => 'mm',
                 'nilai' => $this->parseSensorValue($sensor['curah_hujan'] ?? '0'),
-                'bahaya' => 1100,
-                'waspada' => 500,
+                'bahaya' => 150,
+                'waspada' => 100,
                 'bencana' => 'Banjir'
             ],
             'ketinggian_air' => [
                 'label' => 'Ketinggian Air',
                 'satuan' => 'cm',
                 'nilai' => $this->parseSensorValue($sensor['ketinggian_air'] ?? '0'),
-                'bahaya' => 1200,
-                'waspada' => 600,
+                'bahaya' => 200,
+                'waspada' => 150,
                 'bencana' => 'Banjir'
             ],
             'kecepatan_angin' => [
                 'label' => 'Kecepatan Angin',
                 'satuan' => 'km/jam',
                 'nilai' => $this->parseSensorValue($sensor['kecepatan_angin'] ?? '0'),
-                'bahaya' => 1300,
-                'waspada' => 700,
-                'bencana' => 'Angin Kencang'
-            ],
-            'tekanan_udara' => [
-                'label' => 'Tekanan Udara',
-                'satuan' => 'hPa',
-                'nilai' => $this->parseSensorValue($sensor['tekanan_udara'] ?? '0'),
-                'bahaya' => 1400,
-                'waspada' => 800,
+                'bahaya' => 50,
+                'waspada' => 38,
                 'bencana' => 'Angin Kencang'
             ],
         ];
 
         $pesanPerSensor = [];
-        $potensiBencana = [];
         $statusGlobal = null;
+        $currentStatus = null;
 
         foreach ($dataSensor as $key => $info) {
             $nilai = $info['nilai'];
             if ($nilai === null) continue;
 
-            $status = null;
-
             if ($nilai >= $info['bahaya']) {
-                $status = 'BAHAYA';
-                $statusGlobal = 'BAHAYA';
-                $potensiBencana[] = $info['bencana'];
-            } elseif ($nilai >= $info['waspada']) {
-                $status = 'WASPADA';
-                if ($statusGlobal !== 'BAHAYA') $statusGlobal = 'WASPADA';
-                $potensiBencana[] = $info['bencana'];
-            }
-
-            if ($status) {
+                $currentStatus = 'BAHAYA';
                 $pesanPerSensor[] = [
                     'sensor' => $info['label'],
                     'nilai' => $nilai,
                     'satuan' => $info['satuan'],
-                    'status' => $status,
+                    'status' => 'BAHAYA',
+                    'bencana' => $info['bencana'],
+                ];
+            } elseif ($nilai >= $info['waspada']) {
+                if ($currentStatus !== 'BAHAYA') {
+                    $currentStatus = 'WASPADA';
+                }
+                $pesanPerSensor[] = [
+                    'sensor' => $info['label'],
+                    'nilai' => $nilai,
+                    'satuan' => $info['satuan'],
+                    'status' => 'WASPADA',
                     'bencana' => $info['bencana'],
                 ];
             }
         }
 
-        if (!$statusGlobal || count($pesanPerSensor) === 0) {
-            return; // Tidak ada sensor dalam status WASPADA/BAHAYA
+        // Jika tidak ada status waspada/bahaya, reset semua counter
+        if (!$currentStatus) {
+            $this->resetAllCounters($nodeId);
+            return;
         }
 
-        // Cek apakah sudah mengirim notifikasi dengan status yang sama dalam 5 menit terakhir
+        $statusGlobal = $currentStatus;
+
+        // Update status sequence
+        $sequenceCacheKey = "status_sequence_{$nodeId}";
+        $currentSequence = Cache::get($sequenceCacheKey, '');
+        $newSequence = $currentSequence . $currentStatus[0]; // 'W' atau 'B'
+
+        // Simpan maksimal 5 karakter terakhir
+        $newSequence = substr($newSequence, -5);
+        Cache::put($sequenceCacheKey, $newSequence, now()->addHours(6));
+
+        Log::debug("Status sequence for {$nodeId}: {$newSequence}");
+
+        // Cek kondisi pengiriman
+        $shouldSend = false;
+
+        if ($currentStatus === 'BAHAYA') {
+            // Hitung berapa kali BAHAYA berturut-turut di akhir sequence
+            $bahayaCount = $this->countTrailingChars($newSequence, 'B');
+            $shouldSend = $bahayaCount >= 2;
+
+            if ($shouldSend) {
+                $this->sendNotification($nodeId, $device, $timestamp, $pesanPerSensor, $statusGlobal);
+                $this->resetAllCounters($nodeId);
+            }
+        } elseif ($currentStatus === 'WASPADA') {
+            // Hitung berapa kali WASPADA berturut-turut di akhir sequence
+            $waspadaCount = $this->countTrailingChars($newSequence, 'W');
+            $shouldSend = $waspadaCount >= 5;
+
+            if ($shouldSend) {
+                $this->sendNotification($nodeId, $device, $timestamp, $pesanPerSensor, $statusGlobal);
+                $this->resetAllCounters($nodeId);
+            }
+        }
+    }
+
+    private function countTrailingChars(string $sequence, string $char): int
+    {
+        $count = 0;
+        for ($i = strlen($sequence) - 1; $i >= 0; $i--) {
+            if ($sequence[$i] === $char) {
+                $count++;
+            } else {
+                break;
+            }
+        }
+        return $count;
+    }
+
+    private function resetAllCounters(string $nodeId): void
+    {
+        Cache::forget("status_sequence_{$nodeId}");
+        Cache::forget("BAHAYA_counter_{$nodeId}");
+        Cache::forget("WASPADA_counter_{$nodeId}");
+    }
+
+    private function sendNotification(
+        string $nodeId,
+        Device $device,
+        string $timestamp,
+        array $pesanPerSensor,
+        string $statusGlobal
+    ): void {
         $cacheKey = "last_notification_{$nodeId}_{$statusGlobal}";
-        $lastSent = Cache::get($cacheKey);
-        $now = now();
-
-        if ($lastSent && $now->diffInMinutes($lastSent) < 5) {
-            return; // Sudah kirim dalam 5 menit terakhir, tidak perlu kirim ulang
+        if (Cache::get($cacheKey)) {
+            return;
         }
 
-        // Simpan waktu pengiriman terakhir
-        Cache::put($cacheKey, $now, now()->addMinutes(5));
-
-        // Buat pesan notifikasi per node (walau lebih dari 1 sensor)
         $judul = "PERINGATAN BENCANA - " . strtoupper($statusGlobal);
-        $message = "[$judul]\n";
-        $message .= "Node ID: {$nodeId}\n";
-        $message .= "Waktu: {$timestamp}\n";
-        $message .= "Lokasi: {$device->location}\n\n";
+        $message = "[$judul]\nNode ID: {$nodeId}\nWaktu: {$timestamp}\nLokasi: {$device->location}\n\n";
 
         foreach ($pesanPerSensor as $item) {
             $message .= "Sensor: {$item['sensor']}\n";
@@ -133,15 +178,19 @@ class NotificationService
             $message .= "Bencana Potensial: {$item['bencana']}\n\n";
         }
 
+        $message .= ($statusGlobal === 'BAHAYA')
+            ? "PERINGATAN BAHAYA! Segera lakukan evakuasi!"
+            : "Peringatan WASPADA! Waspadai potensi bencana!";
+
         $message .= "Potensi bencana terdeteksi di wilayah {$device->name}. Segera waspada dan ambil tindakan pencegahan.";
 
         $phoneNumbers = Whatsapp::pluck('phone_number')->toArray();
         $groupIds = explode(',', env('FONNTE_GROUP_IDS', ''));
-        $allTargets = array_merge($phoneNumbers, $groupIds);
-        $allTargets = array_filter($allTargets, fn($target) => !empty($target));
+        $allTargets = array_filter(array_merge($phoneNumbers, $groupIds));
 
         $this->waService->sendMessage($allTargets, $message);
+        Cache::put($cacheKey, now(), now()->addMinutes(5));
 
-        Log::info("Pesan peringatan dikirim untuk $nodeId [$statusGlobal]: $message");
+        Log::info("Notifikasi terkirim untuk {$nodeId} [{$statusGlobal}]");
     }
 }

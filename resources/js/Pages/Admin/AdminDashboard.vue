@@ -346,14 +346,6 @@ const getBatteryIcon = (level) => {
                                 </p>
                             </div>
                         </div>
-                        <div
-                            v-if="device.latest_battery?.charging"
-                            class="flex items-center"
-                        >
-                            <i
-                                class="fa-solid fa-bolt text-yellow-500 text-sm animate-pulse"
-                            ></i>
-                        </div>
                     </div>
 
                     <!-- Battery Info -->
@@ -399,56 +391,6 @@ const getBatteryIcon = (level) => {
                                             device.latest_battery.level + '%',
                                     }"
                                 ></div>
-                            </div>
-                        </div>
-
-                        <!-- Additional Info -->
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2">
-                                    <i
-                                        class="fa-solid fa-thermometer-half text-blue-500 text-sm"
-                                    ></i>
-                                    <span class="text-sm text-gray-600"
-                                        >Suhu</span
-                                    >
-                                </div>
-                                <span
-                                    class="text-sm font-semibold text-gray-900"
-                                >
-                                    {{
-                                        device.latest_battery.temperature !==
-                                        null
-                                            ? device.latest_battery
-                                                  .temperature + "°C"
-                                            : "N/A"
-                                    }}
-                                </span>
-                            </div>
-
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-2">
-                                    <i
-                                        class="fa-solid fa-plug text-purple-500 text-sm"
-                                    ></i>
-                                    <span class="text-sm text-gray-600"
-                                        >Status</span
-                                    >
-                                </div>
-                                <span
-                                    :class="[
-                                        'text-sm font-semibold px-2 py-1 rounded-full text-xs',
-                                        device.latest_battery.charging
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-gray-100 text-gray-600',
-                                    ]"
-                                >
-                                    {{
-                                        device.latest_battery.charging
-                                            ? "Mengisi"
-                                            : "Tidak Mengisi"
-                                    }}
-                                </span>
                             </div>
                         </div>
 

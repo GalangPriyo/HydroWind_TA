@@ -159,7 +159,6 @@ const extractNumericValue = (value) => {
 };
 
 // Callback saat data dari MQTT masuk
-// Callback saat data dari MQTT masuk
 function handleMQTTData(newData) {
     if (
         !newData ||

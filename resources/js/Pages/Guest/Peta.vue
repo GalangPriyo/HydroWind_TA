@@ -12,6 +12,14 @@ const props = defineProps({
     devices: Array,
 });
 
+// Fungsi untuk ekstrak nilai numerik dari berbagai format input
+const extractNumericValue = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value !== "string") return 0;
+    const numericMatch = value.match(/[\d.]+/);
+    return numericMatch ? parseFloat(numericMatch[0]) : 0;
+};
+
 console.log("Device meta from props:", props.devices);
 
 let map = null;
@@ -52,14 +60,14 @@ function showInitialMarkers() {
                     const kecepatanSensor = device.sensors.find(
                         (s) => s.name === "kecepatan_angin"
                     );
+                    const value = extractNumericValue(
+                        kecepatanSensor.latest_data.value
+                    );
                     sensorHtml += `
     <div class="sensor-item wind">
         <div class="sensor-title">Kecepatan Angin</div>
         <div class="sensor-value">${
-            kecepatanSensor.latest_data.value !== undefined &&
-            kecepatanSensor.latest_data.value !== null
-                ? kecepatanSensor.latest_data.value + " km/jam"
-                : "-"
+            value !== undefined && value !== null ? value + " km/jam" : "-"
         }</div>
     </div>`;
                 }
@@ -68,14 +76,14 @@ function showInitialMarkers() {
                     const ketinggianSensor = device.sensors.find(
                         (s) => s.name === "ketinggian_air"
                     );
+                    const value = extractNumericValue(
+                        ketinggianSensor.latest_data.value
+                    );
                     sensorHtml += `
     <div class="sensor-item water">
         <div class="sensor-title">Ketinggian Air</div>
         <div class="sensor-value">${
-            ketinggianSensor.latest_data.value !== undefined &&
-            ketinggianSensor.latest_data.value !== null
-                ? ketinggianSensor.latest_data.value + " cm"
-                : "-"
+            value !== undefined && value !== null ? value + " cm" : "-"
         }</div>
     </div>`;
                 }
@@ -84,14 +92,14 @@ function showInitialMarkers() {
                     const curahHujanSensor = device.sensors.find(
                         (s) => s.name === "curah_hujan"
                     );
+                    const value = extractNumericValue(
+                        curahHujanSensor.latest_data.value
+                    );
                     sensorHtml += `
     <div class="sensor-item rain">
         <div class="sensor-title">Curah Hujan</div>
         <div class="sensor-value">${
-            curahHujanSensor.latest_data.value !== undefined &&
-            curahHujanSensor.latest_data.value !== null
-                ? curahHujanSensor.latest_data.value + " mm"
-                : "-"
+            value !== undefined && value !== null ? value + " mm" : "-"
         }</div>
     </div>`;
                 }
@@ -100,14 +108,14 @@ function showInitialMarkers() {
                     const tekananSensor = device.sensors.find(
                         (s) => s.name === "tekanan_udara"
                     );
+                    const value = extractNumericValue(
+                        tekananSensor.latest_data.value
+                    );
                     sensorHtml += `
     <div class="sensor-item pressure">
         <div class="sensor-title">Tekanan Udara</div>
         <div class="sensor-value">${
-            tekananSensor.latest_data.value !== undefined &&
-            tekananSensor.latest_data.value !== null
-                ? tekananSensor.latest_data.value + " hPa"
-                : "-"
+            value !== undefined && value !== null ? value + " hPa" : "-"
         }</div>
     </div>`;
                 }
@@ -218,51 +226,45 @@ function onMQTTGps(data) {
 
         // Sensor lainnya (dari sensorData)
         if (availableSensors.includes("kecepatan_angin")) {
+            const value = extractNumericValue(sensor.kecepatan_angin);
             sensorHtml += `
     <div class="sensor-item wind">
         <div class="sensor-title">Kecepatan Angin</div>
         <div class="sensor-value">${
-            sensor.kecepatan_angin !== undefined &&
-            sensor.kecepatan_angin !== null
-                ? sensor.kecepatan_angin + " km/jam"
-                : "-"
+            value !== undefined && value !== null ? value + " km/jam" : "-"
         }</div>
     </div>`;
         }
 
         if (availableSensors.includes("ketinggian_air")) {
+            const value = extractNumericValue(sensor.ketinggian_air);
             sensorHtml += `
     <div class="sensor-item water">
         <div class="sensor-title">Ketinggian Air</div>
         <div class="sensor-value">${
-            sensor.ketinggian_air !== undefined &&
-            sensor.ketinggian_air !== null
-                ? sensor.ketinggian_air + " cm"
-                : "-"
+            value !== undefined && value !== null ? value + " cm" : "-"
         }</div>
     </div>`;
         }
 
         if (availableSensors.includes("curah_hujan")) {
+            const value = extractNumericValue(sensor.curah_hujan);
             sensorHtml += `
     <div class="sensor-item rain">
         <div class="sensor-title">Curah Hujan</div>
         <div class="sensor-value">${
-            sensor.curah_hujan !== undefined && sensor.curah_hujan !== null
-                ? sensor.curah_hujan + " mm"
-                : "-"
+            value !== undefined && value !== null ? value + " mm" : "-"
         }</div>
     </div>`;
         }
 
         if (availableSensors.includes("tekanan_udara")) {
+            const value = extractNumericValue(sensor.tekanan_udara);
             sensorHtml += `
     <div class="sensor-item pressure">
         <div class="sensor-title">Tekanan Udara</div>
         <div class="sensor-value">${
-            sensor.tekanan_udara !== undefined && sensor.tekanan_udara !== null
-                ? sensor.tekanan_udara + " hPa"
-                : "-"
+            value !== undefined && value !== null ? value + " hPa" : "-"
         }</div>
     </div>`;
         }
@@ -340,41 +342,53 @@ function onMQTTSensor(data) {
             }
 
             if (availableSensors.includes("kecepatan_angin")) {
+                const value = extractNumericValue(data.sensor.kecepatan_angin);
                 sensorHtml += `
                 <div class="sensor-item wind">
                     <div class="sensor-title">Kecepatan Angin</div>
                     <div class="sensor-value">${
-                        data.sensor.kecepatan_angin || "-"
+                        value !== undefined && value !== null
+                            ? value + " km/jam"
+                            : "-"
                     }</div>
                 </div>`;
             }
 
             if (availableSensors.includes("ketinggian_air")) {
+                const value = extractNumericValue(data.sensor.ketinggian_air);
                 sensorHtml += `
                 <div class="sensor-item water">
                     <div class="sensor-title">Ketinggian Air</div>
                     <div class="sensor-value">${
-                        data.sensor.ketinggian_air || "-"
+                        value !== undefined && value !== null
+                            ? value + " cm"
+                            : "-"
                     }</div>
                 </div>`;
             }
 
             if (availableSensors.includes("curah_hujan")) {
+                const value = extractNumericValue(data.sensor.curah_hujan);
                 sensorHtml += `
                 <div class="sensor-item rain">
                     <div class="sensor-title">Curah Hujan</div>
                     <div class="sensor-value">${
-                        data.sensor.curah_hujan || "-"
+                        value !== undefined && value !== null
+                            ? value + " mm"
+                            : "-"
                     }</div>
                 </div>`;
             }
 
             if (availableSensors.includes("tekanan_udara")) {
+                const value = extractNumericValue(data.sensor.tekanan_udara);
                 sensorHtml += `
                 <div class="sensor-item pressure">
                     <div class="sensor-title">Tekanan Udara</div>
                     <div class="sensor-value">${
-                        data.sensor.tekanan_udara || "-"
+                        value !== undefined && value !== null
+                            ? value + " hPa"
+                            : "-"
                     }</div>
                 </div>`;
             }

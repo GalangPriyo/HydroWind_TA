@@ -296,7 +296,9 @@ const formatDate = (dateString) => {
                         @click="searchQuery = ''"
                         class="inline-flex items-center px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
                     >
-                        <span><i class="fa-solid fa-rotate-left"></i></span>
+                        <span
+                            ><i class="fa-solid fa-rotate-left me-1"></i
+                        ></span>
                         Reset Pencarian
                     </button>
                 </div>

@@ -176,7 +176,25 @@ const throttledSubmitFilter = throttle(() => {
     });
 }, 1000);
 
+function validateDates() {
+    if (
+        form.value.date_from &&
+        form.value.date_to &&
+        new Date(form.value.date_to) < new Date(form.value.date_from)
+    ) {
+        Swal.fire({
+            icon: "error",
+            title: "Kesalahan Tanggal",
+            text: "Tanggal akhir tidak boleh lebih awal dari tanggal awal",
+        });
+        return false;
+    }
+    return true;
+}
+
 function submitFilter() {
+    if (!validateDates()) return;
+
     throttledSubmitFilter();
 }
 
@@ -381,6 +399,7 @@ onMounted(() => {
                                 id="date_from"
                                 type="date"
                                 v-model="form.date_from"
+                                @change="validateDates()"
                                 class="input input-sm input-bordered w-full rounded-lg"
                             />
                         </div>
@@ -396,6 +415,7 @@ onMounted(() => {
                                 id="date_to"
                                 type="date"
                                 v-model="form.date_to"
+                                @change="validateDates()"
                                 class="input input-sm input-bordered w-full rounded-lg"
                             />
                         </div>

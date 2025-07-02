@@ -77,22 +77,43 @@ const handleMQTTData = (newData) => {
         (d) => d.node_id === newData.node_id
     );
 
+    // Fungsi untuk memformat timestamp dari MQTT
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return "Tidak tersedia";
+
+        // Coba parse sebagai waktu saja (format HH:MM:SS)
+        if (/^\d{2}:\d{2}:\d{2}$/.test(timestamp)) {
+            const today = new Date();
+            const [hours, minutes, seconds] = timestamp.split(":");
+            today.setHours(hours, minutes, seconds);
+
+            // Format sebagai DD-MM-YYYY | HH:MM:SS WIB
+            const day = String(today.getDate()).padStart(2, "0");
+            const month = String(today.getMonth() + 1).padStart(2, "0");
+            const year = today.getFullYear();
+            const time = today.toTimeString().split(" ")[0];
+            return `${day}-${month}-${year} | ${time} WIB`;
+        }
+
+        // Coba parse sebagai Date object jika format lengkap
+        const d = new Date(timestamp);
+        if (!isNaN(d)) {
+            const day = String(d.getDate()).padStart(2, "0");
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const year = d.getFullYear();
+            const time = d.toTimeString().split(" ")[0];
+            return `${day}-${month}-${year} | ${time} WIB`;
+        }
+
+        return "Tidak tersedia";
+    };
+
     if (existingIndex !== -1) {
         // Update status and timestamp
-        const formattedTimestamp = newData.timestamp
-            ? (() => {
-                  const d = new Date(newData.timestamp);
-                  if (isNaN(d)) return "Tidak tersedia"; // Cek jika invalid date
-                  const day = String(d.getDate()).padStart(2, "0");
-                  const month = String(d.getMonth() + 1).padStart(2, "0");
-                  const year = d.getFullYear();
-                  const time = d.toTimeString().split(" ")[0];
-                  return `${day}-${month}-${year} | ${time} WIB`;
-              })()
-            : "Tidak tersedia";
-
         mqttData.value[existingIndex].status = "Online";
-        mqttData.value[existingIndex].last_updated = formattedTimestamp;
+        mqttData.value[existingIndex].last_updated = formatTimestamp(
+            newData.timestamp
+        );
 
         formattedSensors.forEach((sensor) => {
             const existingSensor = mqttData.value[existingIndex].sensors.find(
@@ -112,23 +133,11 @@ const handleMQTTData = (newData) => {
             }
         });
     } else {
-        const formattedTimestamp = newData.timestamp
-            ? (() => {
-                  const d = new Date(newData.timestamp);
-                  if (isNaN(d)) return "Tidak tersedia"; // Cek jika invalid date
-                  const day = String(d.getDate()).padStart(2, "0");
-                  const month = String(d.getMonth() + 1).padStart(2, "0");
-                  const year = d.getFullYear();
-                  const time = d.toTimeString().split(" ")[0];
-                  return `${day}-${month}-${year} | ${time} WIB`;
-              })()
-            : "Tidak tersedia";
-
         const newDevice = {
             node_id: newData.node_id,
-            name: "Node " + newData.node_id.split("-")[1], // Default name if not found
+            name: "NODE " + newData.node_id.split("-")[1], // Default name if not found
             status: "Online",
-            last_updated: formattedTimestamp,
+            last_updated: formatTimestamp(newData.timestamp),
             sensors: formattedSensors.map((sensor) => ({
                 ...sensor,
                 data: Array(10).fill(sensor.value),
@@ -197,7 +206,7 @@ onUnmounted(() => {
             </div>
 
             <div v-else-if="monitoringStatus === 'has_nodes_but_no_realtime'">
-                <div class="border-b border-gray-200">
+                <div class="border-b border-gray-400">
                     <nav class="-mb-px flex space-x-4 overflow-x-auto">
                         <button
                             v-for="(device, index) in mqttData"
@@ -276,7 +285,7 @@ onUnmounted(() => {
             </div>
 
             <div v-else-if="monitoringStatus === 'has_nodes_and_realtime'">
-                <div class="border-b border-gray-200">
+                <div class="border-b border-gray-400">
                     <nav class="-mb-px flex space-x-4 overflow-x-auto">
                         <button
                             v-for="(device, index) in mqttData"

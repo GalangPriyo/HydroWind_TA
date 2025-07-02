@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Battery extends Model
 {
+    protected $table = 'batteries';
+
     protected $guarded = [];
 
     public function device()

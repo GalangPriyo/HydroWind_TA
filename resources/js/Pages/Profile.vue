@@ -24,7 +24,7 @@ const updatePassword = () => {
             form.reset();
             Swal.fire({
                 icon: "success",
-                title: "Password Berhasil Diubah",
+                title: "Password Berhasil Diperbarui",
                 text: "Password baru Anda telah disimpan.",
                 timer: 3000,
                 showConfirmButton: false,

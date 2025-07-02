@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\Device;
-use App\Models\Battery;
 use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller

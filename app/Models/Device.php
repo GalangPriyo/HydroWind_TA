@@ -10,38 +10,9 @@ class Device extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'location', 'latitude', 'longitude', 'node_id', 'token', 'status'];
+    protected $table = 'devices';
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($device) {
-            // Jika token kosong, generate token
-            if (empty($device->token)) {
-                $device->token = Str::random(32);
-            }
-
-            // Generate node_id jika belum diisi
-            if (empty($device->node_id)) {
-                // Cari node_id terbesar yang ada
-                $lastDevice = self::orderBy('id', 'desc')->first();
-                $lastNumber = 0;
-
-                if ($lastDevice) {
-                    // Ekstrak nomor dari node_id terakhir (NODE-001 -> 1)
-                    preg_match('/NODE-(\d+)/', $lastDevice->node_id, $matches);
-                    if (isset($matches[1])) {
-                        $lastNumber = (int)$matches[1];
-                    }
-                }
-
-                // Buat node_id baru dengan format NODE-001, NODE-002, dll
-                $newNumber = $lastNumber + 1;
-                $device->node_id = 'NODE-' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-            }
-        });
-    }
+    protected $fillable = ['name', 'location', 'latitude', 'longitude', 'node_id', 'status'];
 
     /**
      * Relasi ke sensor

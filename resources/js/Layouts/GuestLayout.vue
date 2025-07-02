@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import { Link, usePage } from "@inertiajs/vue3";
+import { Link, usePage, router } from "@inertiajs/vue3";
+import Swal from "sweetalert2";
 
 const isScrolled = ref(false);
 const darkMode = ref(localStorage.getItem("theme") === "dark");
@@ -29,6 +30,28 @@ const closeMenuOnClickOutside = (event) => {
     if (isMenuOpen.value && !event.target.closest(".dropdown")) {
         isMenuOpen.value = false;
     }
+};
+
+const confirmLogout = () => {
+    Swal.fire({
+        title: "Konfirmasi Logout",
+        text: "Apakah Anda yakin ingin keluar dari akun Anda?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Keluar",
+        cancelButtonText: "Batal",
+        customClass: {
+            popup: "rounded-xl",
+            confirmButton: "rounded-lg",
+            cancelButton: "rounded-lg",
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            router.post("/logout");
+        }
+    });
 };
 
 onMounted(() => {
@@ -118,25 +141,34 @@ onUnmounted(() => {
                                                 ? '/admin/dashboard'
                                                 : '/user/dashboard'
                                         "
-                                        class="block px-4 py-2 hover:bg-base-200 rounded"
-                                        >Dashboard</Link
+                                        class="flex items-center gap-2 px-4 py-2 hover:bg-base-200"
+                                        ><i
+                                            class="fa-solid fa-house w-4 text-center"
+                                        ></i>
+                                        <span>Dashboard</span></Link
                                     >
                                 </li>
                                 <li>
                                     <Link
                                         href="/profile"
-                                        class="block px-4 py-2 hover:bg-base-200 rounded"
-                                        >Profil</Link
+                                        class="flex items-center gap-2 px-4 py-2 hover:bg-base-200"
                                     >
+                                        <i
+                                            class="fa-solid fa-user w-4 text-center"
+                                        ></i>
+                                        <span>Profil</span>
+                                    </Link>
                                 </li>
                                 <li>
-                                    <Link
-                                        href="/logout"
-                                        method="post"
-                                        as="button"
-                                        class="block px-4 py-2 text-error hover:bg-error hover:text-error-content rounded"
-                                        >Logout</Link
+                                    <button
+                                        @click="confirmLogout"
+                                        class="flex items-center gap-2 px-4 py-2 text-error hover:bg-error/10"
                                     >
+                                        <i
+                                            class="fa-solid fa-right-from-bracket w-4 text-center"
+                                        ></i>
+                                        <span>Logout</span>
+                                    </button>
                                 </li>
                             </ul>
                         </div>

@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\Device;
-use App\Models\SensorData;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class GuestController extends Controller
 {

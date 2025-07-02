@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Response;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 
 class PenggunaController extends Controller
 {
@@ -58,13 +59,19 @@ class PenggunaController extends Controller
         $sheet->setCellValue('C1', 'Nomor WA');
 
         // Ambil data
-        $users = \App\Models\User::with('whatsapp')->get();
+        $users = User::with('whatsapp')
+            ->where('role', 'user')
+            ->get();
 
         $row = 2;
         foreach ($users as $user) {
             $sheet->setCellValue('A' . $row, $user->name);
             $sheet->setCellValue('B' . $row, $user->email);
-            $sheet->setCellValue('C' . $row, $user->whatsapp->phone_number ?? '-');
+            $sheet->setCellValueExplicit(
+                'C' . $row,
+                $user->whatsapp->phone_number ?? '-',
+                DataType::TYPE_STRING
+            );
             $row++;
         }
 
@@ -112,7 +119,7 @@ class PenggunaController extends Controller
             'email' => $request->email,
             'password' => Hash::make('12345678'), // Password default
             'role' => 'user', // Role otomatis user
-            'email_verified_at' => Auth::user()->role === 'admin' ? now() : null, // Otomatis terverifikasi
+            'email_verified_at' => now() // Otomatis terverifikasi
         ]);
 
         // Simpan nomor WhatsApp terkait user yang baru dibuat
