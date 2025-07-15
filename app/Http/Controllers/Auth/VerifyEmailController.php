@@ -26,11 +26,9 @@ class VerifyEmailController extends Controller
             event(new Verified($request->user()));
         }
 
-        // Logout setelah berhasil verifikasi
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('login')->with('status', 'Email berhasil diverifikasi. Silakan login.');
+        return match ($request->user()->role) {
+            'admin' => redirect()->route('admin.dashboard'),
+            'user' => redirect()->route('user.dashboard'),
+        };
     }
 }

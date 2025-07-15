@@ -54,7 +54,7 @@ defineOptions({ layout: GuestLayout });
                             Masuk untuk mengakses dashboard dan melihat riwayat
                             data sensor.
                         </p>
-                        <div class="mt-4 lg:mt-6">
+                        <!-- <div class="mt-4 lg:mt-6">
                             <Link
                                 :href="route('register')"
                                 class="text-blue-200 hover:text-white font-medium inline-flex items-center text-sm sm:text-base"
@@ -62,7 +62,7 @@ defineOptions({ layout: GuestLayout });
                                 <span>Belum punya akun? Daftar disini</span>
                                 <i class="fas fa-arrow-right ml-2"></i>
                             </Link>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -132,13 +132,13 @@ defineOptions({ layout: GuestLayout });
                                         value="Password"
                                         class="block text-sm font-medium text-gray-700"
                                     />
-                                    <Link
+                                    <!-- <Link
                                         v-if="canResetPassword"
                                         :href="route('password.request')"
                                         class="text-sm text-blue-600 hover:text-blue-800 font-medium"
                                     >
                                         Lupa password?
-                                    </Link>
+                                    </Link> -->
                                 </div>
                                 <TextInput
                                     id="password"

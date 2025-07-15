@@ -6,6 +6,19 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Echo from "laravel-echo";
 
+// FIX: Mengatasi masalah 404 pada ikon marker Leaflet di production
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: markerIcon2x,
+    iconUrl: markerIcon,
+    shadowUrl: markerShadow,
+});
+
 defineOptions({ layout: GuestLayout });
 
 const props = defineProps({
@@ -64,12 +77,14 @@ function showInitialMarkers() {
                         kecepatanSensor.latest_data.value
                     );
                     sensorHtml += `
-    <div class="sensor-item wind">
-        <div class="sensor-title">Kecepatan Angin</div>
-        <div class="sensor-value">${
-            value !== undefined && value !== null ? value + " km/jam" : "-"
-        }</div>
-    </div>`;
+                    <div class="sensor-item wind">
+                        <div class="sensor-title">Kecepatan Angin</div>
+                        <div class="sensor-value">${
+                            value !== undefined && value !== null
+                                ? value + " km/jam"
+                                : "-"
+                        }</div>
+                    </div>`;
                 }
 
                 if (availableSensors.includes("ketinggian_air")) {
@@ -80,12 +95,14 @@ function showInitialMarkers() {
                         ketinggianSensor.latest_data.value
                     );
                     sensorHtml += `
-    <div class="sensor-item water">
-        <div class="sensor-title">Ketinggian Air</div>
-        <div class="sensor-value">${
-            value !== undefined && value !== null ? value + " cm" : "-"
-        }</div>
-    </div>`;
+                    <div class="sensor-item water">
+                        <div class="sensor-title">Ketinggian Air</div>
+                        <div class="sensor-value">${
+                            value !== undefined && value !== null
+                                ? value + " cm"
+                                : "-"
+                        }</div>
+                    </div>`;
                 }
 
                 if (availableSensors.includes("curah_hujan")) {

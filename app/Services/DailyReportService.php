@@ -17,82 +17,52 @@ class DailyReportService
         $this->waService = $waService;
     }
 
+    /**
+     * Entry point to generate and send the consolidated daily report.
+     */
     public function sendDailyReports()
     {
-        $now = Carbon::now();
+        // Tentukan periode 24 jam, dari jam 18:00 kemarin sampai 18:00 hari ini.
+        $endTime = Carbon::now()->setTime(18, 0, 0);
+        $startTime = $endTime->copy()->subDay();
 
-        // Tentukan periode 18:00 kemarin sampai 18:00 hari ini
-        if ($now->hour < 18) {
-            $startTime = $now->copy()->subDay()->setTime(18, 0, 0);
-            $endTime = $now->copy()->setTime(18, 0, 0);
-        } else {
-            $startTime = $now->copy()->setTime(18, 0, 0);
-            $endTime = $now->copy()->addDay()->setTime(18, 0, 0);
+        Log::info("Memulai pembuatan Laporan Harian untuk periode: {$startTime} hingga {$endTime}");
+
+        // Ambil semua device yang aktif beserta relasi sensornya.
+        $devices = Device::with('sensors')->where('status', 'active')->get();
+
+        if ($devices->isEmpty()) {
+            Log::info("Tidak ada device aktif yang ditemukan. Laporan harian tidak dibuat.");
+            return;
         }
 
-        Log::info("Generating daily reports for period {$startTime} to {$endTime}");
-
-        $devices = Device::with(['sensors' => function ($query) use ($startTime, $endTime) {
-            $query->with(['sensorData' => function ($q) use ($startTime, $endTime) {
-                $q->whereBetween('timestamp', [$startTime, $endTime]);
-            }]);
-        }])->where('status', 'active')->get();
-
-        $thresholds = [
-            'curah_hujan' => ['bahaya' => 150, 'waspada' => 100],
-            'ketinggian_air' => ['bahaya' => 200, 'waspada' => 150],
-            'kecepatan_angin' => ['bahaya' => 50, 'waspada' => 38],
-        ];
-
+        $allReportsData = [];
         foreach ($devices as $device) {
-            if ($this->hasWarningStatus($device, $thresholds, $startTime, $endTime)) {
-                Log::info("Device {$device->name} has warning status, skipping daily report");
-                continue;
-            }
+            // Generate data statistik untuk setiap device
+            $reportData = $this->generateDeviceReportData($device, $startTime, $endTime);
 
-            $reportData = $this->generateDeviceReport($device, $startTime, $endTime);
-
-            // Hanya kirim jika ada data sensor
+            // Hanya tambahkan ke laporan jika device tersebut memiliki data sensor pada periode ini
             if (!empty($reportData['sensors'])) {
-                $this->sendDeviceReport($device, $reportData);
-            }
-        }
-    }
-
-    private function hasWarningStatus(Device $device, array $thresholds, Carbon $startTime, Carbon $endTime): bool
-    {
-        foreach ($device->sensors as $sensor) {
-            $sensorName = $sensor->name;
-
-            if (!isset($thresholds[$sensorName])) {
-                continue;
-            }
-
-            // Gunakan query langsung untuk efisiensi
-            $maxValue = $sensor->sensorData()
-                ->whereBetween('timestamp', [$startTime, $endTime])
-                ->max('value');
-
-            if ($maxValue === null) {
-                continue;
-            }
-
-            if ($maxValue >= $thresholds[$sensorName]['bahaya']) {
-                return true;
-            }
-
-            if ($maxValue >= $thresholds[$sensorName]['waspada']) {
-                return true;
+                $allReportsData[] = $reportData;
             }
         }
 
-        return false;
+        // Hanya kirim laporan jika ada setidaknya satu device dengan data
+        if (!empty($allReportsData)) {
+            $this->buildAndSendMessage($allReportsData);
+        } else {
+            Log::info("Tidak ada data sensor yang ditemukan untuk device manapun pada periode ini. Laporan tidak dikirim.");
+        }
     }
 
-    private function generateDeviceReport(Device $device, Carbon $startTime, Carbon $endTime): array
+    /**
+     * Generate statistical data for a single device within the time frame.
+     */
+    private function generateDeviceReportData(Device $device, Carbon $startTime, Carbon $endTime): array
     {
         $report = [
             'device_name' => $device->name,
+            'node_id' => $device->node_id, // Asumsi ada kolom 'node_id' di tabel devices
             'location' => $device->location,
             'period' => $startTime->format('d/m/Y H:i') . ' - ' . $endTime->format('d/m/Y H:i'),
             'sensors' => []
@@ -104,12 +74,14 @@ class DailyReportService
                 ->get();
 
             if ($dataPoints->isEmpty()) {
-                continue;
+                continue; // Lanjut ke sensor berikutnya jika tidak ada data
             }
 
-            $values = $dataPoints->pluck('value')->filter()->toArray();
+            // Ambil nilai (value) saja dan filter nilai null/kosong
+            $values = $dataPoints->pluck('value')->filter(function ($value) {
+                return $value !== null && $value !== '';
+            })->toArray();
 
-            // Skip jika tidak ada nilai valid
             if (empty($values)) {
                 continue;
             }
@@ -126,6 +98,52 @@ class DailyReportService
         return $report;
     }
 
+    /**
+     * Build the final message string from all device reports and send it.
+     */
+    private function buildAndSendMessage(array $allReportsData): void
+    {
+        // === MEMBANGUN PESAN ===
+        $message = "*LAPORAN HARIAN MONITORING - HYDROWIND*\n";
+        $message .= "==============================\n";
+
+        foreach ($allReportsData as $reportData) {
+            $message .= "*INFORMASI PERANGKAT:*\n";
+            $message .= "- *Nama Device:* {$reportData['device_name']}\n";
+            $message .= "- *Node ID:* {$reportData['node_id']}\n";
+            $message .= "- *Lokasi:* {$reportData['location']}\n";
+            $message .= "- *Periode:* {$reportData['period']}\n";
+            $message .= "--------------------------------------------------\n";
+            $message .= "*NILAI SENSOR:*\n";
+
+            foreach ($reportData['sensors'] as $sensorName => $data) {
+                $label = $this->getSensorLabel($sensorName);
+                $unit = $data['unit'];
+                $message .= "- *{$label}:*\n";
+                $message .= "     > Rata-rata = {$data['avg']} {$unit}\n";
+                $message .= "     > Terendah = {$data['min']} {$unit}\n";
+                $message .= "     > Tertinggi = {$data['max']} {$unit}\n";
+                $message .= "     > Data Masuk = {$data['count']}\n";
+            }
+            $message .= "==============================\n\n";
+        }
+
+        // === MENGIRIM PESAN ===
+        $phoneNumbers = Whatsapp::pluck('phone_number')->toArray();
+        $groupIds = array_filter(explode(',', env('FONNTE_GROUP_IDS', '')));
+        $allTargets = array_unique(array_merge($phoneNumbers, $groupIds));
+
+        if (!empty($allTargets)) {
+            $this->waService->sendMessage($allTargets, trim($message));
+            Log::info("Laporan harian gabungan berhasil dikirim.", ['penerima' => $allTargets]);
+        } else {
+            Log::warning("Tidak ada penerima (nomor WA/grup ID) yang ditemukan untuk laporan harian.");
+        }
+    }
+
+    /**
+     * Get the unit for a given sensor name.
+     */
     private function getUnitForSensor(string $sensorName): string
     {
         return match ($sensorName) {
@@ -137,34 +155,9 @@ class DailyReportService
         };
     }
 
-    private function sendDeviceReport(Device $device, array $reportData): void
-    {
-        $message = "LAPORAN HARIAN - KONDISI AMAN\n";
-        $message .= "- Lokasi: {$reportData['location']}\n";
-        $message .= "- Periode: {$reportData['period']}\n";
-        $message .= "- Device: {$reportData['device_name']}\n\n";
-
-        $message .= "RATA-RATA NILAI SENSOR:\n";
-        foreach ($reportData['sensors'] as $sensorName => $data) {
-            $label = $this->getSensorLabel($sensorName);
-            $message .= "- {$label}: {$data['avg']} {$data['unit']} ";
-            $message .= "(Min: {$data['min']}, Max: {$data['max']}, Data: {$data['count']})\n";
-        }
-
-        $message .= "\nSTATUS:\nAMAN - Tidak terdeteksi kondisi waspada/bahaya dalam 24 jam terakhir";
-
-        $phoneNumbers = Whatsapp::pluck('phone_number')->toArray();
-        $groupIds = explode(',', env('FONNTE_GROUP_IDS', ''));
-        $allTargets = array_filter(array_merge($phoneNumbers, $groupIds));
-
-        if (!empty($allTargets)) {
-            $this->waService->sendMessage($allTargets, $message);
-            Log::info("Daily report sent for device {$device->name}");
-        } else {
-            Log::warning("No recipients found for daily report");
-        }
-    }
-
+    /**
+     * Get a human-readable label for a given sensor name.
+     */
     private function getSensorLabel(string $sensorName): string
     {
         return match ($sensorName) {

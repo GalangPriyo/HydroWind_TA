@@ -19,11 +19,13 @@ const activeNodeIndex = ref(0);
 const classifyStatus = (value, type) => {
     const thresholds = {
         curah_hujan: { bahaya: 150, waspada: 100 },
-        ketinggian_air: { bahaya: 200, waspada: 150 },
+        ketinggian_air: { bahaya: 150, waspada: 120 },
         kecepatan_angin: { bahaya: 50, waspada: 38 },
-        // tekanan_udara: { bahaya: 1000, waspada: 1010 },
     };
 
+    if (!thresholds[type] || typeof value !== "number") {
+        return "No Data";
+    }
     if (value >= thresholds[type].bahaya) return "bahaya";
     if (value >= thresholds[type].waspada) return "waspada";
     return "aman";

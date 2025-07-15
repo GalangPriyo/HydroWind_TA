@@ -17,7 +17,7 @@ class NotificationService
         $this->waService = $waService;
     }
 
-    private function parseSensorValue(string $raw): float
+    private function parseSensorValue(string $raw): ?float
     {
         $clean = preg_replace('/[^0-9.]/', '', $raw);
         return is_numeric($clean) ? (float) $clean : null;
@@ -48,8 +48,8 @@ class NotificationService
                 'label' => 'Ketinggian Air',
                 'satuan' => 'cm',
                 'nilai' => $this->parseSensorValue($sensor['ketinggian_air'] ?? '0'),
-                'bahaya' => 200,
-                'waspada' => 150,
+                'bahaya' => 150,
+                'waspada' => 120,
                 'bencana' => 'Banjir'
             ],
             'kecepatan_angin' => [
@@ -185,11 +185,19 @@ class NotificationService
         $message .= "Potensi bencana terdeteksi di wilayah {$device->name}. Segera waspada dan ambil tindakan pencegahan.";
 
         $phoneNumbers = Whatsapp::pluck('phone_number')->toArray();
-        $groupIds = explode(',', env('FONNTE_GROUP_IDS', ''));
+
+        // <<< PERUBAHAN DI SINI >>>
+        // Mengambil group ID dari file config/services.php
+        $groupIdsString = config('services.fonnte.group_ids', '');
+        $groupIds = !empty($groupIdsString) ? explode(',', $groupIdsString) : [];
+
         $allTargets = array_filter(array_merge($phoneNumbers, $groupIds));
 
-        $this->waService->sendMessage($allTargets, $message);
-        Cache::put($cacheKey, now(), now()->addMinutes(5));
+        if (!empty($allTargets)) {
+            $this->waService->sendMessage($allTargets, $message);
+        }
+
+        Cache::put($cacheKey, now(), now()->addMinutes(10));
 
         Log::info("Notifikasi terkirim untuk {$nodeId} [{$statusGlobal}]");
     }

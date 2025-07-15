@@ -10,8 +10,10 @@ Artisan::command('inspire', function () {
 
 Schedule::command('sensor_datas:truncate')
     ->monthlyOn(1, '00:00')
-    ->timezone('Asia/Jakarta'); // WIB (GMT+7)
+    ->timezone('Asia/Jakarta')
+    ->appendOutputTo(storage_path('logs/scheduler.log'));
 
 Schedule::command('reports:daily')
-    ->dailyAt('18:05') // Jalankan setiap jam 18:05
-    ->timezone('Asia/Jakarta');
+    ->dailyAt('18:05')
+    ->timezone('Asia/Jakarta')
+    ->appendOutputTo(storage_path('logs/scheduler.log'));

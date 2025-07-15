@@ -542,7 +542,7 @@ const statusLabel = (status) => {
                                             >
                                         </div>
                                     </th>
-                                    <th
+                                    <!-- <th
                                         class="w-[17.5%] py-3 px-3 text-center font-medium text-gray-700 border-b border-gray-200"
                                     >
                                         <div
@@ -555,7 +555,7 @@ const statusLabel = (status) => {
                                                 >Tekanan Udara</span
                                             >
                                         </div>
-                                    </th>
+                                    </th> -->
                                 </tr>
                             </thead>
 
@@ -587,7 +587,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 500 mm</span
+                                            >&lt; 100 mm</span
                                         >
                                     </td>
                                     <td
@@ -595,7 +595,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 600 cm</span
+                                            >&lt; 150 cm</span
                                         >
                                     </td>
                                     <td
@@ -603,17 +603,17 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 700 km/jam</span
+                                            >&lt; 38 km/jam</span
                                         >
                                     </td>
-                                    <td
+                                    <!-- <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
                                             >&lt; 800 hPa</span
                                         >
-                                    </td>
+                                    </td> -->
                                 </tr>
 
                                 <!-- Baris Waspada -->
@@ -643,7 +643,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 500 mm</span
+                                            >≥ 100 mm</span
                                         >
                                     </td>
                                     <td
@@ -651,7 +651,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 600 cm</span
+                                            >≥ 120 cm</span
                                         >
                                     </td>
                                     <td
@@ -659,17 +659,17 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 700 km/jam</span
+                                            >≥ 38 km/jam</span
                                         >
                                     </td>
-                                    <td
+                                    <!-- <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
                                             >≥ 800 hPa</span
                                         >
-                                    </td>
+                                    </td> -->
                                 </tr>
 
                                 <!-- Baris Bahaya -->
@@ -699,7 +699,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1100 mm</span
+                                            >≥ 150 mm</span
                                         >
                                     </td>
                                     <td
@@ -707,7 +707,7 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1200 cm</span
+                                            >≥ 150 cm</span
                                         >
                                     </td>
                                     <td
@@ -715,17 +715,17 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1300 km/jam</span
+                                            >≥ 50 km/jam</span
                                         >
                                     </td>
-                                    <td
+                                    <!-- <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
                                             >≥ 1400 hPa</span
                                         >
-                                    </td>
+                                    </td> -->
                                 </tr>
                             </tbody>
                         </table>
