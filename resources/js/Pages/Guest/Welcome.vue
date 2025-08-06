@@ -16,18 +16,26 @@ const state = reactive({
 
 const activeNodeIndex = ref(0);
 
-const classifyStatus = (value, type) => {
-    const thresholds = {
+const classifyStatus = (value, sensor) => {
+    // Use thresholds from database if available
+    if (sensor.threshold) {
+        if (value >= sensor.threshold.bahaya) return "bahaya";
+        if (value >= sensor.threshold.waspada) return "waspada";
+        return "aman";
+    }
+
+    // Fallback to hardcoded thresholds if no database thresholds
+    const fallbackThresholds = {
         curah_hujan: { bahaya: 150, waspada: 100 },
         ketinggian_air: { bahaya: 150, waspada: 120 },
         kecepatan_angin: { bahaya: 50, waspada: 38 },
     };
 
-    if (!thresholds[type] || typeof value !== "number") {
+    if (!fallbackThresholds[sensor.name] || typeof value !== "number") {
         return "No Data";
     }
-    if (value >= thresholds[type].bahaya) return "bahaya";
-    if (value >= thresholds[type].waspada) return "waspada";
+    if (value >= fallbackThresholds[sensor.name].bahaya) return "bahaya";
+    if (value >= fallbackThresholds[sensor.name].waspada) return "waspada";
     return "aman";
 };
 
@@ -41,19 +49,19 @@ const getInitialSensorData = (node) => {
             const value = parseFloat(latest.value);
             sensors[sensor.name] = {
                 value,
-                status: classifyStatus(value, sensor.name),
+                status: classifyStatus(value, sensor),
+                threshold: sensor.threshold, // Include threshold in sensor data
             };
             timestamps.push(new Date(latest.timestamp));
         } else {
-            // Beri nilai default jika belum ada data
             sensors[sensor.name] = {
                 value: "-",
                 status: "No Data",
+                threshold: sensor.threshold, // Include threshold even if no data
             };
         }
     });
 
-    // Cari timestamp terbaru (maksimum)
     const latestTimestamp = timestamps.length
         ? new Date(Math.max(...timestamps.map((t) => t.getTime())))
         : null;
@@ -74,11 +82,15 @@ const getInitialSensorData = (node) => {
     };
 };
 
-// ⬇️ Harus diletakkan setelah fungsi di atas
 const validSensorsPerNode = {};
+const sensorThresholdsPerNode = {}; // Store thresholds by node and sensor
 
 props.devices.forEach((node) => {
     validSensorsPerNode[node.node_id] = node.sensors.map((s) => s.name);
+    sensorThresholdsPerNode[node.node_id] = {};
+    node.sensors.forEach((sensor) => {
+        sensorThresholdsPerNode[node.node_id][sensor.name] = sensor.threshold;
+    });
     state.nodes[node.node_id] = getInitialSensorData(node);
 });
 
@@ -116,9 +128,20 @@ const handleMQTTData = (payload) => {
         const numericValue = parseFloat(
             val?.toString().replace(/[^0-9.]/g, "") || "0"
         );
+
+        // Get threshold from stored values
+        const threshold = sensorThresholdsPerNode[payload.node_id]?.[key];
+
         sensors[key] = {
             value: numericValue,
-            status: classifyStatus(numericValue, key),
+            status: threshold
+                ? numericValue >= threshold.bahaya
+                    ? "bahaya"
+                    : numericValue >= threshold.waspada
+                    ? "waspada"
+                    : "aman"
+                : classifyStatus(numericValue, { name: key }), // Fallback
+            threshold: threshold, // Include threshold in sensor data
         };
     }
 
@@ -129,8 +152,8 @@ const handleMQTTData = (payload) => {
             name: node.name || "Titik Pantau",
             updatedAt,
             sensors: {
-                ...previous, // simpan sensor lama
-                ...sensors, // timpa dengan sensor yang baru dikirim
+                ...previous,
+                ...sensors,
             },
         };
     }

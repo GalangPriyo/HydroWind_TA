@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Device;
 use App\Models\Sensor;
+use App\Models\Threshold;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -42,7 +43,7 @@ class DeviceController extends Controller
     // Menampilkan detail device dan sensor-sensornya
     public function showDevice($id)
     {
-        $device = Device::with('sensors')->findOrFail($id);
+        $device = Device::with('sensors.threshold')->findOrFail($id);
 
         return Inertia::render('Admin/Device/Show', [
             'device' => $device,
@@ -54,12 +55,20 @@ class DeviceController extends Controller
     // Menampilkan form tambah device
     public function createDevice()
     {
+        $defaultThresholds = [
+            'curah_hujan' => ['waspada' => 100, 'bahaya' => 150],
+            'ketinggian_air' => ['waspada' => 120, 'bahaya' => 150],
+            'kecepatan_angin' => ['waspada' => 38, 'bahaya' => 50],
+            'tekanan_udara' => ['waspada' => 0, 'bahaya' => 1],
+        ];
+
         return Inertia::render('Admin/Device/Create', [
             'user' => Auth::user(),
+            'defaultThresholds' => $defaultThresholds,
         ]);
     }
 
-    // Menyimpan device baru + sensor
+    // Menyimpan device baru + sensor + threshold
     public function storeDevice(Request $request)
     {
         $request->validate([
@@ -71,6 +80,9 @@ class DeviceController extends Controller
             'status' => 'required|in:active,inactive,maintenance',
             'sensors' => 'required|array|min:1|max:4',
             'sensors.*.name' => 'required|in:curah_hujan,ketinggian_air,kecepatan_angin,arah_angin,tekanan_udara',
+            'thresholds' => 'required|array',
+            'thresholds.*.waspada' => 'required|numeric|min:0',
+            'thresholds.*.bahaya' => 'required|numeric|gt:thresholds.*.waspada',
         ]);
 
         // Simpan Device
@@ -83,11 +95,18 @@ class DeviceController extends Controller
             'status' => $request->status,
         ]);
 
-        // Simpan Sensor yang Dipilih
-        foreach ($request->sensors as $sensor) {
-            Sensor::create([
+        // Simpan Sensor dan Threshold
+        foreach ($request->sensors as $index => $sensor) {
+            $sensorModel = Sensor::create([
                 'device_id' => $device->id,
                 'name' => $sensor['name'],
+            ]);
+
+            // Simpan threshold untuk sensor ini
+            Threshold::create([
+                'sensor_id' => $sensorModel->id,
+                'waspada' => $request->thresholds[$index]['waspada'],
+                'bahaya' => $request->thresholds[$index]['bahaya'],
             ]);
         }
 
@@ -98,9 +117,27 @@ class DeviceController extends Controller
     // Menampilkan form edit device
     public function editDevice($id)
     {
-        $device = Device::with('sensors')->findOrFail($id);
+        $device = Device::with(['sensors', 'sensors.threshold'])->findOrFail($id);
+
+        $defaultThresholds = [
+            'curah_hujan' => ['waspada' => 100, 'bahaya' => 150],
+            'ketinggian_air' => ['waspada' => 120, 'bahaya' => 150],
+            'kecepatan_angin' => ['waspada' => 38, 'bahaya' => 50],
+            'tekanan_udara' => ['waspada' => 0, 'bahaya' => 1],
+        ];
+
+        // Format thresholds untuk frontend
+        $thresholds = [];
+        foreach ($device->sensors as $sensor) {
+            $thresholds[$sensor->name] = $sensor->threshold
+                ? ['waspada' => $sensor->threshold->waspada, 'bahaya' => $sensor->threshold->bahaya]
+                : $defaultThresholds[$sensor->name] ?? ['waspada' => 0, 'bahaya' => 0];
+        }
+
         return Inertia::render('Admin/Device/Edit', [
             'device' => $device,
+            'thresholds' => $thresholds,
+            'defaultThresholds' => $defaultThresholds,
             'user' => Auth::user(),
         ]);
     }
@@ -113,14 +150,17 @@ class DeviceController extends Controller
             'location' => 'required|string|max:255',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'status' => 'required|in:active,inactive,maintenance',
             'sensors' => 'required|array|min:1|max:4',
-            'sensors.*.id' => 'nullable|exists:sensors,id', // Jika sensor sudah ada
+            'sensors.*.id' => 'nullable|exists:sensors,id',
             'sensors.*.name' => 'required|in:curah_hujan,ketinggian_air,kecepatan_angin,arah_angin,tekanan_udara',
+            'thresholds' => 'required|array',
+            'thresholds.*.waspada' => 'required|numeric|min:0',
+            'thresholds.*.bahaya' => 'required|numeric|gt:thresholds.*.waspada',
         ]);
 
         $device = Device::findOrFail($id);
         $device->update([
-
             'name' => $request->name,
             'location' => $request->location,
             'latitude' => $request->latitude,
@@ -128,42 +168,65 @@ class DeviceController extends Controller
             'status' => $request->status,
         ]);
 
-        // Update Sensor
         $existingSensorIds = [];
 
-        foreach ($request->sensors as $sensor) {
+        foreach ($request->sensors as $index => $sensor) {
             if (!empty($sensor['id'])) {
-                // Update sensor yang sudah ada
+                // Update existing sensor
                 $existingSensor = Sensor::findOrFail($sensor['id']);
-                $existingSensor->update([
-                    'name' => $sensor['name'],
-                ]);
+                $existingSensor->update(['name' => $sensor['name']]);
                 $existingSensorIds[] = $sensor['id'];
+
+                // Update threshold
+                Threshold::updateOrCreate(
+                    ['sensor_id' => $sensor['id']],
+                    [
+                        'waspada' => $request->thresholds[$index]['waspada'],
+                        'bahaya' => $request->thresholds[$index]['bahaya'],
+                    ]
+                );
             } else {
-                // Cek apakah sensor dengan nama tersebut sudah ada pada device ini
+                // Check if sensor exists for this device
                 $existingSensor = Sensor::where('device_id', $device->id)
                     ->where('name', $sensor['name'])
                     ->first();
 
                 if ($existingSensor) {
-                    // Sudah ada, tidak perlu buat baru
                     $existingSensorIds[] = $existingSensor->id;
+
+                    // Update threshold for existing sensor
+                    Threshold::updateOrCreate(
+                        ['sensor_id' => $existingSensor->id],
+                        [
+                            'waspada' => $request->thresholds[$index]['waspada'],
+                            'bahaya' => $request->thresholds[$index]['bahaya'],
+                        ]
+                    );
                 } else {
-                    // Tambahkan sensor baru
+                    // Create new sensor
                     $newSensor = Sensor::create([
                         'device_id' => $device->id,
                         'name' => $sensor['name'],
                     ]);
                     $existingSensorIds[] = $newSensor->id;
+
+                    // Create threshold for new sensor
+                    Threshold::create([
+                        'sensor_id' => $newSensor->id,
+                        'waspada' => $request->thresholds[$index]['waspada'],
+                        'bahaya' => $request->thresholds[$index]['bahaya'],
+                    ]);
                 }
             }
         }
 
+        // Delete sensors not in request
+        Sensor::where('device_id', $device->id)
+            ->whereNotIn('id', $existingSensorIds)
+            ->delete();
 
-        // Hapus sensor yang tidak ada dalam request
-        Sensor::where('device_id', $device->id)->whereNotIn('id', $existingSensorIds)->delete();
-
-        return redirect()->route('admin.devices')->with('success', 'Device berhasil diperbarui!');
+        return redirect()->route('admin.devices')
+            ->with('success', 'Device berhasil diperbarui!');
     }
 
     // Menghapus device dan sensornya

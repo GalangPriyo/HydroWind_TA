@@ -4,8 +4,9 @@ import { useForm, Head } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 
 defineOptions({ layout: AuthenticatedLayout });
-defineProps({
+const props = defineProps({
     user: Object,
+    defaultThresholds: Object,
 });
 
 const form = useForm({
@@ -16,7 +17,11 @@ const form = useForm({
     node_id: "",
     status: "active",
     sensors: [],
+    thresholds: [],
 });
+
+const selectedSensors = ref([]);
+const sensorThresholds = ref({});
 
 const availableSensors = [
     {
@@ -49,14 +54,33 @@ const availableSensors = [
     },
 ];
 
-const selectedSensors = ref([]);
+// Inisialisasi threshold default
+const initializeThresholds = () => {
+    availableSensors.forEach((sensor) => {
+        sensorThresholds.value[sensor.value] = {
+            waspada: props.defaultThresholds[sensor.value]?.waspada || 0,
+            bahaya: props.defaultThresholds[sensor.value]?.bahaya || 0,
+        };
+    });
+};
+
+initializeThresholds();
+
 const errors = computed(() => form.errors);
 const processing = computed(() => form.processing);
 
-// Memperbarui form.sensors saat selectedSensors berubah
-watch(selectedSensors, (newVal) => {
-    form.sensors = newVal.map((name) => ({ name }));
-});
+// Memperbarui form.sensors dan form.thresholds saat selectedSensors berubah
+watch(
+    [selectedSensors, sensorThresholds], // Perhatikan perubahan pada nilai yang di-watch
+    ([newSelected, newThresholds]) => {
+        form.sensors = newSelected.map((name) => ({ name }));
+        form.thresholds = newSelected.map((name) => ({
+            waspada: newThresholds[name].waspada,
+            bahaya: newThresholds[name].bahaya,
+        }));
+    },
+    { deep: true }
+);
 
 const store = () => {
     if (selectedSensors.value.length === 0) {
@@ -65,11 +89,17 @@ const store = () => {
 
     form.post(route("admin.devices.store"), {
         onSuccess: () => {
-            // Reset form setelah berhasil disimpan
             form.reset();
             selectedSensors.value = [];
+            initializeThresholds();
         },
     });
+};
+
+// Toggle untuk menampilkan/menyembunyikan form threshold
+const showThresholdForm = ref(false);
+const toggleThresholdForm = () => {
+    showThresholdForm.value = !showThresholdForm.value;
 };
 </script>
 
@@ -354,7 +384,103 @@ const store = () => {
                                 </label>
                             </div>
                         </div>
+                        <!-- Tombol untuk menampilkan form threshold -->
+                        <div class="mt-6">
+                            <button
+                                type="button"
+                                @click="toggleThresholdForm"
+                                class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
+                            >
+                                <i class="fa-solid fa-sliders"></i>
+                                <span>Atur Threshold Sensor</span>
+                            </button>
+                        </div>
 
+                        <!-- Form Threshold (ditampilkan hanya jika showThresholdForm true) -->
+                        <div
+                            v-if="
+                                showThresholdForm && selectedSensors.length > 0
+                            "
+                            class="mt-6 bg-blue-50 p-6 rounded-xl"
+                        >
+                            <h4
+                                class="text-lg font-semibold text-gray-800 mb-4"
+                            >
+                                Atur Threshold
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div
+                                    v-for="sensorType in selectedSensors"
+                                    :key="sensorType"
+                                >
+                                    <div
+                                        class="bg-white p-4 rounded-lg border border-blue-500"
+                                    >
+                                        <h5
+                                            class="font-medium text-gray-700 mb-3"
+                                        >
+                                            {{
+                                                availableSensors.find(
+                                                    (s) =>
+                                                        s.value === sensorType
+                                                )?.label
+                                            }}
+                                        </h5>
+
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-600 mb-1"
+                                                >
+                                                    Nilai Waspada
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    v-model="
+                                                        sensorThresholds[
+                                                            sensorType
+                                                        ].waspada
+                                                    "
+                                                    @change="
+                                                        updateFormThresholds
+                                                    "
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                    min="0"
+                                                    step="0.01"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-600 mb-1"
+                                                >
+                                                    Nilai Bahaya
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    v-model="
+                                                        sensorThresholds[
+                                                            sensorType
+                                                        ].bahaya
+                                                    "
+                                                    @change="
+                                                        updateFormThresholds
+                                                    "
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                    :min="
+                                                        sensorThresholds[
+                                                            sensorType
+                                                        ].waspada + 0.01
+                                                    "
+                                                    step="0.01"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div
                             v-if="errors.sensors"
                             class="mt-4 flex items-center text-sm text-red-600 bg-red-50 p-3 rounded-lg"

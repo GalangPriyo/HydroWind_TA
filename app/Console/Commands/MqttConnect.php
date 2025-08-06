@@ -56,6 +56,7 @@ class MqttConnect extends Command
                 $this->info("✅ Connected to MQTT broker at {$this->config['host']}:{$this->config['port']}");
                 Log::info("MQTT client connected successfully", ['host' => $this->config['host']]);
 
+                // Contoh: ['sensor', 'baterai', 'gps'] --> ada di file config/mqtt.php
                 foreach ($this->config['topics'] as $topic) {
                     $this->mqtt->subscribe($topic, function (string $topic, string $message) {
                         echo "[" . now() . "] Topic: {$topic} | Dispatching job...\n";

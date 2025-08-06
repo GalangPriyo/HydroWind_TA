@@ -8,6 +8,8 @@ defineOptions({ layout: AuthenticatedLayout });
 const props = defineProps({
     device: Object,
     user: Object,
+    thresholds: Object,
+    defaultThresholds: Object,
 });
 
 const form = useForm({
@@ -20,7 +22,17 @@ const form = useForm({
     sensors: props.device.sensors.map((sensor) => ({
         id: sensor.id,
         name: sensor.name,
-        unit: sensor.unit,
+    })),
+    thresholds: props.device.sensors.map((sensor) => ({
+        sensor_id: sensor.id,
+        waspada:
+            props.thresholds[sensor.name]?.waspada ||
+            props.defaultThresholds[sensor.name]?.waspada ||
+            0,
+        bahaya:
+            props.thresholds[sensor.name]?.bahaya ||
+            props.defaultThresholds[sensor.name]?.bahaya ||
+            0,
     })),
 });
 
@@ -56,15 +68,56 @@ const availableSensors = [
 ];
 
 const selectedSensors = ref(props.device.sensors.map((sensor) => sensor.name));
+const sensorThresholds = ref({});
 const errors = computed(() => form.errors);
 const processing = computed(() => form.processing);
 
-// Memperbarui form.sensors saat selectedSensors berubah
-watch(selectedSensors, (newVal) => {
-    form.sensors = newVal.map((name) => ({ name }));
-});
+// Initialize thresholds
+const initializeThresholds = () => {
+    props.device.sensors.forEach((sensor) => {
+        sensorThresholds.value[sensor.name] = {
+            waspada:
+                props.thresholds[sensor.name]?.waspada ||
+                props.defaultThresholds[sensor.name]?.waspada ||
+                0,
+            bahaya:
+                props.thresholds[sensor.name]?.bahaya ||
+                props.defaultThresholds[sensor.name]?.bahaya ||
+                0,
+        };
+    });
+};
 
-const store = () => {
+initializeThresholds();
+
+// Update form.sensors and form.thresholds when selectedSensors changes
+watch(
+    [selectedSensors, sensorThresholds],
+    ([newSelected, newThresholds]) => {
+        form.sensors = newSelected.map((name) => {
+            const existingSensor = props.device.sensors.find(
+                (s) => s.name === name
+            );
+            return existingSensor ? { id: existingSensor.id, name } : { name };
+        });
+
+        form.thresholds = newSelected.map((name) => ({
+            sensor_id:
+                props.device.sensors.find((s) => s.name === name)?.id || null,
+            waspada:
+                newThresholds[name]?.waspada ||
+                props.defaultThresholds[name]?.waspada ||
+                0,
+            bahaya:
+                newThresholds[name]?.bahaya ||
+                props.defaultThresholds[name]?.bahaya ||
+                0,
+        }));
+    },
+    { deep: true }
+);
+
+const updateDevice = () => {
     if (selectedSensors.value.length === 0) {
         alert("Pilih minimal satu sensor.");
         return;
@@ -72,17 +125,33 @@ const store = () => {
 
     form.put(route("admin.devices.update", props.device.id), {
         onSuccess: () => {
-            // form.reset(); // sementara jangan reset agar bisa dilihat hasilnya
+            // Optional: Add success notification
         },
         onError: (errors) => {
             console.log("Validasi gagal:", errors);
         },
     });
 };
+
+// Toggle threshold form visibility
+const showThresholdForm = ref(false);
+const toggleThresholdForm = () => {
+    showThresholdForm.value = !showThresholdForm.value;
+};
+
+// Update form thresholds when sensor thresholds change
+const updateFormThresholds = () => {
+    form.thresholds = selectedSensors.value.map((name) => ({
+        sensor_id:
+            props.device.sensors.find((s) => s.name === name)?.id || null,
+        waspada: sensorThresholds.value[name].waspada,
+        bahaya: sensorThresholds.value[name].bahaya,
+    }));
+};
 </script>
 
 <template>
-    <Head title="Daftar Alat" />
+    <Head title="Edit Perangkat" />
     <div class="max-w-6xl mx-auto">
         <button
             @click="$inertia.visit(route('admin.devices'))"
@@ -107,7 +176,7 @@ const store = () => {
             class="card bg-white border border-gray-100 w-full shadow-xl self-center my-2"
         >
             <div class="card-body px-4 py-6">
-                <form @submit.prevent="store" class="p-4 space-y-8">
+                <form @submit.prevent="updateDevice" class="p-4 space-y-8">
                     <!-- Device Information Section -->
                     <div
                         class="grid grid-cols-1 lg:grid-cols-2 gap-8 border-t border-gray-200 pt-8"
@@ -332,7 +401,7 @@ const store = () => {
                                     class="flex items-start p-4 border-2 border-gray-200 rounded-xl cursor-pointer transition-all duration-200 hover:border-blue-300 hover:bg-blue-50 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:ring-4 peer-checked:ring-blue-100"
                                 >
                                     <div
-                                        class="flex items-center justify-center w-10 h-10 bg-white rounded-lg border border-gray-200 mr-4 peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-all duration-200"
+                                        class="flex items-center justify-center w-10 h-10 bg-white rounded-lg border border-blue-500 mr-4 peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-all duration-200"
                                     >
                                         <span
                                             class="text-lg peer-checked:hidden"
@@ -341,14 +410,14 @@ const store = () => {
                                                     'fa-solid text-blue-500',
                                                     sensor.icon,
                                                 ]"
-                                            ></i
-                                        ></span>
+                                            ></i>
+                                        </span>
                                         <span
                                             class="text-white hidden peer-checked:block"
                                             ><i
                                                 class="fa-solid fa-circle-check text-lg"
-                                            ></i
-                                        ></span>
+                                            ></i>
+                                        </span>
                                     </div>
                                     <div class="flex-1">
                                         <div
@@ -366,6 +435,104 @@ const store = () => {
                                         </div>
                                     </div>
                                 </label>
+                            </div>
+                        </div>
+
+                        <!-- Threshold Configuration Button -->
+                        <div class="mt-6">
+                            <button
+                                type="button"
+                                @click="toggleThresholdForm"
+                                class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2"
+                            >
+                                <i class="fa-solid fa-sliders"></i>
+                                <span>Atur Threshold Sensor</span>
+                            </button>
+                        </div>
+
+                        <!-- Threshold Form -->
+                        <div
+                            v-if="
+                                showThresholdForm && selectedSensors.length > 0
+                            "
+                            class="mt-6 bg-blue-50 p-6 rounded-xl"
+                        >
+                            <h4
+                                class="text-lg font-semibold text-gray-800 mb-4"
+                            >
+                                Atur Threshold
+                            </h4>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div
+                                    v-for="sensorType in selectedSensors"
+                                    :key="sensorType"
+                                >
+                                    <div
+                                        class="bg-white p-4 rounded-lg border border-blue-500"
+                                    >
+                                        <h5
+                                            class="font-medium text-gray-700 mb-3"
+                                        >
+                                            {{
+                                                availableSensors.find(
+                                                    (s) =>
+                                                        s.value === sensorType
+                                                )?.label
+                                            }}
+                                        </h5>
+
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-600 mb-1"
+                                                >
+                                                    Nilai Waspada
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    v-model="
+                                                        sensorThresholds[
+                                                            sensorType
+                                                        ].waspada
+                                                    "
+                                                    @change="
+                                                        updateFormThresholds
+                                                    "
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                    min="0"
+                                                    step="0.01"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-600 mb-1"
+                                                >
+                                                    Nilai Bahaya
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    v-model="
+                                                        sensorThresholds[
+                                                            sensorType
+                                                        ].bahaya
+                                                    "
+                                                    @change="
+                                                        updateFormThresholds
+                                                    "
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                    :min="
+                                                        sensorThresholds[
+                                                            sensorType
+                                                        ].waspada + 0.01
+                                                    "
+                                                    step="0.01"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
