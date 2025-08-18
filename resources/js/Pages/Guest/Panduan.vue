@@ -83,7 +83,7 @@ const currentThresholds = computed(() => {
             waspada: 120,
             bahaya: 150,
         },
-        kecepatan_angin: thresholds["kecepatan_air"] || {
+        kecepatan_angin: thresholds["kecepatan_angin"] || {
             waspada: 38,
             bahaya: 50,
         },
