@@ -180,11 +180,11 @@ onUnmounted(() => {
                                 class="px-4 py-2 border border-blue-600 text-sm text-blue-600 rounded-full font-medium hover:bg-blue-600 hover:text-primary-content transition-colors"
                                 >Login</Link
                             >
-                            <Link
+                            <!-- <Link
                                 href="/register"
                                 class="px-4 py-2 bg-blue-600 text-sm text-primary-content font-medium rounded-full hover:bg-blue-700 transition-colors"
                                 >Register</Link
-                            >
+                            > -->
                         </div>
                     </template>
                 </div>
@@ -281,12 +281,12 @@ onUnmounted(() => {
                                     @click="isMenuOpen = false"
                                     >Login</Link
                                 >
-                                <Link
+                                <!-- <Link
                                     href="/register"
                                     class="w-full text-center px-4 py-2 bg-blue-600 text-sm text-primary-content font-medium rounded-full hover:bg-blue-700 transition-colors"
                                     @click="isMenuOpen = false"
                                     >Register</Link
-                                >
+                                > -->
                             </div>
                         </template>
                     </div>

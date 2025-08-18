@@ -11,9 +11,7 @@ class GuestController extends Controller
 
     public function home(): Response
     {
-        $devices = Device::with(['sensors' => function ($query) {
-            $query->with(['latestData']);
-        }])
+        $devices = Device::with(['sensors.latestData', 'sensors.threshold'])
             ->where('status', 'active')
             ->get();
 
@@ -25,7 +23,7 @@ class GuestController extends Controller
 
     public function panduan(): Response
     {
-        $devices = Device::with('sensors')->get();
+        $devices = Device::with('sensors.threshold')->get();
         return Inertia::render('Guest/Panduan', ['devices' => $devices]);
     }
 

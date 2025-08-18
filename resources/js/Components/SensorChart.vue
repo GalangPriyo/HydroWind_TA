@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch, onBeforeUnmount } from "vue";
+import { onMounted, ref, watch, onBeforeUnmount, nextTick, markRaw } from "vue"; // Import markRaw
 import Chart from "chart.js/auto";
 
 const props = defineProps({
@@ -26,75 +26,81 @@ const sensorLabel = (name) => {
 const initializeChart = () => {
     if (!chartCanvas.value) return;
 
-    // Hancurkan chart sebelumnya jika ada
     if (chartInstance.value) {
         chartInstance.value.destroy();
-        chartInstance.value = null;
     }
 
     const ctx = chartCanvas.value.getContext("2d");
     if (!ctx) return;
 
-    chartInstance.value = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: Array.from({ length: 10 }, (_, i) => ""),
-            datasets: [
-                {
-                    label: sensorLabel(props.sensorType),
-                    data:
-                        props.sensorData ||
-                        Array(10).fill(props.sensorValue || 0),
-                    borderColor: "#2b7fff",
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: true,
-                    backgroundColor: "rgba(219, 234, 254, 0.4)",
-                    pointBackgroundColor: "#2b7fff",
-                    pointRadius: 3,
-                },
-            ],
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 0,
+    // Convert props data to plain JS arrays to avoid proxy issues on initialization
+    const initialData = props.sensorData
+        ? [...props.sensorData]
+        : Array(10).fill(props.sensorValue || 0);
+
+    // Use markRaw to prevent Vue from making the chart instance reactive
+    chartInstance.value = markRaw(
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: Array.from({ length: 10 }, () => ""),
+                datasets: [
+                    {
+                        label: sensorLabel(props.sensorType),
+                        data: initialData, // Use the plain array
+                        borderColor: "#2b7fff",
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true,
+                        backgroundColor: "rgba(219, 234, 254, 0.4)",
+                        pointBackgroundColor: "#2b7fff",
+                        pointRadius: 3,
+                    },
+                ],
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0,
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: "rgba(0, 0, 0, 0.1)",
+                        },
+                    },
+                    x: {
+                        grid: {
+                            display: false,
+                        },
+                    },
+                },
+                plugins: {
+                    legend: {
                         display: true,
-                        color: "rgba(0, 0, 0, 0.1)",
+                        position: "top",
+                        labels: {
+                            boxWidth: 12,
+                        },
                     },
-                },
-                x: {
-                    grid: {
-                        display: false,
+                    tooltip: {
+                        enabled: true,
+                        mode: "index",
+                        intersect: false,
                     },
                 },
             },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: "top",
-                    labels: {
-                        boxWidth: 12,
-                    },
-                },
-                tooltip: {
-                    enabled: true,
-                    mode: "index",
-                    intersect: false,
-                },
-            },
-        },
-    });
+        })
+    );
 };
 
 onMounted(() => {
-    initializeChart();
+    nextTick(() => {
+        initializeChart();
+    });
 });
 
 onBeforeUnmount(() => {
@@ -105,34 +111,36 @@ onBeforeUnmount(() => {
 });
 
 watch(
-    () => [props.sensorData, props.sensorValue, props.sensorType],
-    ([newData, newValue, newType]) => {
+    () => [props.sensorData, props.sensorValue],
+    ([newData, newValue]) => {
         if (!chartInstance.value) return;
 
         try {
-            // Update data chart
             if (newData && Array.isArray(newData)) {
-                chartInstance.value.data.datasets[0].data = newData;
+                // IMPORTANT: Convert reactive proxy to a plain array
+                chartInstance.value.data.datasets[0].data = [...newData];
             } else if (newValue !== undefined) {
+                // The current data from the chart is already a plain array
                 const currentData = chartInstance.value.data.datasets[0].data;
                 const updatedData = [...currentData.slice(1), newValue];
                 chartInstance.value.data.datasets[0].data = updatedData;
             }
 
-            // Update label jika type berubah
-            if (newType) {
-                chartInstance.value.data.datasets[0].label =
-                    sensorLabel(newType);
-            }
-
             chartInstance.value.update();
         } catch (error) {
-            console.error("Error updating chart:", error);
-            // Reinitialize chart jika terjadi error
-            initializeChart();
+            console.error("Error updating chart data:", error);
         }
     },
     { deep: true }
+);
+
+watch(
+    () => props.sensorType,
+    (newType) => {
+        if (chartInstance.value && newType) {
+            initializeChart();
+        }
+    }
 );
 </script>
 

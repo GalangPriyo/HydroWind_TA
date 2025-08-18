@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Device;
 use App\Models\Whatsapp;
+use App\Models\Sensor;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use App\Services\WhatsAppService;
@@ -17,7 +18,7 @@ class NotificationService
         $this->waService = $waService;
     }
 
-    private function parseSensorValue(string $raw): float
+    private function parseSensorValue(string $raw): ?float
     {
         $clean = preg_replace('/[^0-9.]/', '', $raw);
         return is_numeric($clean) ? (float) $clean : null;
@@ -29,38 +30,53 @@ class NotificationService
         $sensor = $payload['sensor'];
         $timestamp = $payload['timestamp'];
 
-        $device = Device::where('node_id', $nodeId)->first();
+        $device = Device::where('node_id', $nodeId)->with('sensors.threshold')->first();
         if (!$device) {
             Log::warning("Node ID $nodeId tidak ditemukan di tabel devices.");
             return;
         }
 
-        $dataSensor = [
-            'curah_hujan' => [
+        // Prepare sensor data with thresholds from database
+        $dataSensor = [];
+
+        // Curah Hujan
+        $rainSensor = $device->sensors->firstWhere('name', 'curah_hujan');
+        if ($rainSensor) {
+            $dataSensor['curah_hujan'] = [
                 'label' => 'Curah Hujan',
                 'satuan' => 'mm',
                 'nilai' => $this->parseSensorValue($sensor['curah_hujan'] ?? '0'),
-                'bahaya' => 150,
-                'waspada' => 100,
+                'bahaya' => $rainSensor->threshold->bahaya ?? 150,
+                'waspada' => $rainSensor->threshold->waspada ?? 100,
                 'bencana' => 'Banjir'
-            ],
-            'ketinggian_air' => [
+            ];
+        }
+
+        // Ketinggian Air
+        $waterLevelSensor = $device->sensors->firstWhere('name', 'ketinggian_air');
+        if ($waterLevelSensor) {
+            $dataSensor['ketinggian_air'] = [
                 'label' => 'Ketinggian Air',
                 'satuan' => 'cm',
                 'nilai' => $this->parseSensorValue($sensor['ketinggian_air'] ?? '0'),
-                'bahaya' => 200,
-                'waspada' => 150,
+                'bahaya' => $waterLevelSensor->threshold->bahaya ?? 150,
+                'waspada' => $waterLevelSensor->threshold->waspada ?? 120,
                 'bencana' => 'Banjir'
-            ],
-            'kecepatan_angin' => [
+            ];
+        }
+
+        // Kecepatan Angin
+        $windSpeedSensor = $device->sensors->firstWhere('name', 'kecepatan_angin');
+        if ($windSpeedSensor) {
+            $dataSensor['kecepatan_angin'] = [
                 'label' => 'Kecepatan Angin',
                 'satuan' => 'km/jam',
                 'nilai' => $this->parseSensorValue($sensor['kecepatan_angin'] ?? '0'),
-                'bahaya' => 50,
-                'waspada' => 38,
+                'bahaya' => $windSpeedSensor->threshold->bahaya ?? 50,
+                'waspada' => $windSpeedSensor->threshold->waspada ?? 38,
                 'bencana' => 'Angin Kencang'
-            ],
-        ];
+            ];
+        }
 
         $pesanPerSensor = [];
         $statusGlobal = null;
@@ -185,11 +201,18 @@ class NotificationService
         $message .= "Potensi bencana terdeteksi di wilayah {$device->name}. Segera waspada dan ambil tindakan pencegahan.";
 
         $phoneNumbers = Whatsapp::pluck('phone_number')->toArray();
-        $groupIds = explode(',', env('FONNTE_GROUP_IDS', ''));
+
+        // Mengambil group ID dari file config/services.php
+        $groupIdsString = config('services.fonnte.group_ids', '');
+        $groupIds = !empty($groupIdsString) ? explode(',', $groupIdsString) : [];
+
         $allTargets = array_filter(array_merge($phoneNumbers, $groupIds));
 
-        $this->waService->sendMessage($allTargets, $message);
-        Cache::put($cacheKey, now(), now()->addMinutes(5));
+        if (!empty($allTargets)) {
+            $this->waService->sendMessage($allTargets, $message);
+        }
+
+        Cache::put($cacheKey, now(), now()->addMinutes(10));
 
         Log::info("Notifikasi terkirim untuk {$nodeId} [{$statusGlobal}]");
     }

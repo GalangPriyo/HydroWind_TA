@@ -1,11 +1,11 @@
 <script setup>
 import GuestLayout from "@/Layouts/GuestLayout.vue";
 import { Head } from "@inertiajs/vue3";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 
 defineOptions({ layout: GuestLayout });
 
-defineProps({
+const props = defineProps({
     devices: Array,
 });
 
@@ -20,6 +20,9 @@ const infoSlides = ref([
     },
 ]);
 
+// Data untuk tabel ambang batas
+const currentDeviceIndex = ref(0);
+
 // Methods
 function nextInfoSlide() {
     if (currentInfoSlide.value < infoSlides.value.length - 1) {
@@ -30,6 +33,18 @@ function nextInfoSlide() {
 function prevInfoSlide() {
     if (currentInfoSlide.value > 0) {
         currentInfoSlide.value--;
+    }
+}
+
+function nextDevice() {
+    if (currentDeviceIndex.value < props.devices.length - 1) {
+        currentDeviceIndex.value++;
+    }
+}
+
+function prevDevice() {
+    if (currentDeviceIndex.value > 0) {
+        currentDeviceIndex.value--;
     }
 }
 
@@ -46,6 +61,34 @@ const statusLabel = (status) => {
             return status;
     }
 };
+
+// Ambil threshold untuk device saat ini
+const currentThresholds = computed(() => {
+    const device = props.devices[currentDeviceIndex.value];
+    const thresholds = {};
+
+    device.sensors.forEach((sensor) => {
+        if (sensor.threshold) {
+            thresholds[sensor.name] = {
+                waspada: sensor.threshold.waspada,
+                bahaya: sensor.threshold.bahaya,
+            };
+        }
+    });
+
+    // Return dengan fallback default values
+    return {
+        curah_hujan: thresholds["curah_hujan"] || { waspada: 100, bahaya: 150 },
+        ketinggian_air: thresholds["ketinggian_air"] || {
+            waspada: 120,
+            bahaya: 150,
+        },
+        kecepatan_angin: thresholds["kecepatan_angin"] || {
+            waspada: 38,
+            bahaya: 50,
+        },
+    };
+});
 </script>
 
 <template>
@@ -443,28 +486,85 @@ const statusLabel = (status) => {
             </div>
 
             <!-- Status Table -->
+            <!-- Status Table -->
             <div class="mb-12">
-                <div class="flex items-center space-x-3 mb-6">
-                    <div
-                        class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"
-                    >
-                        <svg
-                            class="w-6 h-6 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"
                         >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                            ></path>
-                        </svg>
+                            <svg
+                                class="w-6 h-6 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900">
+                            Status Bencana dan Ambang Batas
+                        </h2>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-900">
-                        Status Bencana dan Ambang Batas
-                    </h2>
+
+                    <!-- Device selector -->
+                    <div
+                        v-if="devices.length > 1"
+                        class="flex items-center space-x-2"
+                    >
+                        <button
+                            @click="prevDevice"
+                            :disabled="currentDeviceIndex === 0"
+                            class="p-2 rounded-full bg-white hover:bg-gray-200 disabled:opacity-50"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M15 19l-7-7 7-7"
+                                />
+                            </svg>
+                        </button>
+
+                        <span class="font-medium text-gray-700">
+                            {{ devices[currentDeviceIndex].name }}
+                        </span>
+
+                        <button
+                            @click="nextDevice"
+                            :disabled="
+                                currentDeviceIndex === devices.length - 1
+                            "
+                            class="p-2 rounded-full bg-white hover:bg-gray-200 disabled:opacity-50"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -493,7 +593,7 @@ const statusLabel = (status) => {
                                     </th>
                                     <th
                                         class="py-4 px-3 text-center text-lg font-medium text-gray-700 border-b border-gray-200"
-                                        colspan="4"
+                                        colspan="3"
                                     >
                                         Ambang Batas
                                     </th>
@@ -542,20 +642,6 @@ const statusLabel = (status) => {
                                             >
                                         </div>
                                     </th>
-                                    <th
-                                        class="w-[17.5%] py-3 px-3 text-center font-medium text-gray-700 border-b border-gray-200"
-                                    >
-                                        <div
-                                            class="flex items-center gap-2 justify-center"
-                                        >
-                                            <i
-                                                class="fas fa-temperature-three-quarters text-blue-500"
-                                            ></i>
-                                            <span class="whitespace-nowrap"
-                                                >Tekanan Udara</span
-                                            >
-                                        </div>
-                                    </th>
                                 </tr>
                             </thead>
 
@@ -587,32 +673,42 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 500 mm</span
                                         >
+                                            &lt;
+                                            {{
+                                                currentThresholds.curah_hujan
+                                                    .waspada
+                                            }}
+                                            mm
+                                        </span>
                                     </td>
                                     <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 600 cm</span
                                         >
+                                            &lt;
+                                            {{
+                                                currentThresholds.ketinggian_air
+                                                    .waspada
+                                            }}
+                                            cm
+                                        </span>
                                     </td>
                                     <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 700 km/jam</span
                                         >
-                                    </td>
-                                    <td
-                                        class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
-                                    >
-                                        <span
-                                            class="bg-green-100 text-green-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >&lt; 800 hPa</span
-                                        >
+                                            &lt;
+                                            {{
+                                                currentThresholds
+                                                    .kecepatan_angin.waspada
+                                            }}
+                                            km/jam
+                                        </span>
                                     </td>
                                 </tr>
 
@@ -643,32 +739,42 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 500 mm</span
                                         >
+                                            ≥
+                                            {{
+                                                currentThresholds.curah_hujan
+                                                    .waspada
+                                            }}
+                                            mm
+                                        </span>
                                     </td>
                                     <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 600 cm</span
                                         >
+                                            ≥
+                                            {{
+                                                currentThresholds.ketinggian_air
+                                                    .waspada
+                                            }}
+                                            cm
+                                        </span>
                                     </td>
                                     <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 700 km/jam</span
                                         >
-                                    </td>
-                                    <td
-                                        class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
-                                    >
-                                        <span
-                                            class="bg-amber-100 text-amber-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 800 hPa</span
-                                        >
+                                            ≥
+                                            {{
+                                                currentThresholds
+                                                    .kecepatan_angin.waspada
+                                            }}
+                                            km/jam
+                                        </span>
                                     </td>
                                 </tr>
 
@@ -699,32 +805,42 @@ const statusLabel = (status) => {
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1100 mm</span
                                         >
+                                            ≥
+                                            {{
+                                                currentThresholds.curah_hujan
+                                                    .bahaya
+                                            }}
+                                            mm
+                                        </span>
                                     </td>
                                     <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1200 cm</span
                                         >
+                                            ≥
+                                            {{
+                                                currentThresholds.ketinggian_air
+                                                    .bahaya
+                                            }}
+                                            cm
+                                        </span>
                                     </td>
                                     <td
                                         class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
                                     >
                                         <span
                                             class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1300 km/jam</span
                                         >
-                                    </td>
-                                    <td
-                                        class="py-4 px-6 text-gray-600 font-mono text-sm text-center"
-                                    >
-                                        <span
-                                            class="bg-red-100 text-red-800 px-2 py-1 rounded whitespace-nowrap"
-                                            >≥ 1400 hPa</span
-                                        >
+                                            ≥
+                                            {{
+                                                currentThresholds
+                                                    .kecepatan_angin.bahaya
+                                            }}
+                                            km/jam
+                                        </span>
                                     </td>
                                 </tr>
                             </tbody>

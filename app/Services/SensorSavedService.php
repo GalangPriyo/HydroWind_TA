@@ -53,7 +53,7 @@ class SensorSavedService
             SensorData::create([
                 'sensor_id' => $sensor->id,
                 'value' => $value,
-                'timestamp' => Carbon::now()->format('Y-m-d') . ' ' . $payload['timestamp'], // Gabungkan tanggal hari ini + jam dari payload
+                'timestamp' => Carbon::createFromFormat('Y-m-d H:i:s', now('Asia/Jakarta')->format('Y-m-d') . ' ' . $payload['timestamp'], 'Asia/Jakarta'),
             ]);
         }
     }

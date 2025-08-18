@@ -39,4 +39,10 @@ return [
         'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    'fonnte' => [
+        'token' => env('FONNTE_TOKEN'),
+        'group_ids' => env('FONNTE_GROUP_IDS'),
+    ],
+
+
 ];

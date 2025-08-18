@@ -33,4 +33,9 @@ class Sensor extends Model
     {
         return $this->hasOne(SensorData::class)->latestOfMany('timestamp');
     }
+
+    public function threshold()
+    {
+        return $this->hasOne(Threshold::class);
+    }
 }

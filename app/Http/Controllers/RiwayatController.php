@@ -61,7 +61,6 @@ class RiwayatController extends Controller
                 return [
                     'id' => $item->id,
                     'timestamp' => Carbon::parse($item->timestamp)
-                        ->timezone('Asia/Jakarta')
                         ->format('Y-m-d H:i:s'),
                     'value' => $item->value,
                     'sensor_name' => $item->sensor->name ?? null,
