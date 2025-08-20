@@ -16,21 +16,21 @@ const state = reactive({
 
 const activeNodeIndex = ref(0);
 
+// --- FUNGSI KLASIFIKASI STATUS ---
 const classifyStatus = (value, sensor) => {
-    // Use thresholds from database if available
+    // [FIX] Memastikan perbandingan dilakukan antara number dengan number.
+    // parseFloat() ditambahkan untuk menjaga konsistensi tipe data dari database.
     if (sensor.threshold) {
-        if (value >= sensor.threshold.bahaya) return "bahaya";
-        if (value >= sensor.threshold.waspada) return "waspada";
+        if (value >= parseFloat(sensor.threshold.bahaya)) return "bahaya";
+        if (value >= parseFloat(sensor.threshold.waspada)) return "waspada";
         return "aman";
     }
-
-    // Fallback to hardcoded thresholds if no database thresholds
+    // Fallback jika tidak ada threshold dari database
     const fallbackThresholds = {
         curah_hujan: { bahaya: 150, waspada: 100 },
         ketinggian_air: { bahaya: 150, waspada: 120 },
         kecepatan_angin: { bahaya: 50, waspada: 38 },
     };
-
     if (!fallbackThresholds[sensor.name] || typeof value !== "number") {
         return "No Data";
     }
@@ -39,6 +39,7 @@ const classifyStatus = (value, sensor) => {
     return "aman";
 };
 
+// --- INISIALISASI DATA AWAL DARI PROPS ---
 const getInitialSensorData = (node) => {
     const sensors = {};
     const timestamps = [];
@@ -50,14 +51,14 @@ const getInitialSensorData = (node) => {
             sensors[sensor.name] = {
                 value,
                 status: classifyStatus(value, sensor),
-                threshold: sensor.threshold, // Include threshold in sensor data
+                threshold: sensor.threshold,
             };
             timestamps.push(new Date(latest.timestamp));
         } else {
             sensors[sensor.name] = {
                 value: "-",
                 status: "No Data",
-                threshold: sensor.threshold, // Include threshold even if no data
+                threshold: sensor.threshold,
             };
         }
     });
@@ -82,8 +83,9 @@ const getInitialSensorData = (node) => {
     };
 };
 
+// --- MEMPROSES DATA AWAL UNTUK SEMUA NODE ---
 const validSensorsPerNode = {};
-const sensorThresholdsPerNode = {}; // Store thresholds by node and sensor
+const sensorThresholdsPerNode = {};
 
 props.devices.forEach((node) => {
     validSensorsPerNode[node.node_id] = node.sensors.map((s) => s.name);
@@ -94,6 +96,7 @@ props.devices.forEach((node) => {
     state.nodes[node.node_id] = getInitialSensorData(node);
 });
 
+// --- MENANGANI DATA MQTT REALTIME ---
 const handleMQTTData = (payload) => {
     const node = props.devices.find((d) => d.node_id === payload.node_id);
     if (!node) return;
@@ -107,16 +110,21 @@ const handleMQTTData = (payload) => {
         "kecepatan_angin",
     ];
 
-    const updatedAt =
-        payload.timestamp ||
-        new Date().toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            timeZone: "Asia/Jakarta",
-        });
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const time = d.toTimeString().split(" ")[0];
+    const updatedAt = `${day}-${month}-${year} | ${time} WIB`;
 
-    const sensors = {};
+    const newSensors = {};
+
+    const initialNodeSensors = state.nodes[payload.node_id]?.sensors || {};
+    for (const sensorName in initialNodeSensors) {
+        if (displaySensorNames.includes(sensorName)) {
+            newSensors[sensorName] = { ...initialNodeSensors[sensorName] };
+        }
+    }
 
     for (const [key, val] of Object.entries(payload.sensor)) {
         if (
@@ -129,49 +137,81 @@ const handleMQTTData = (payload) => {
             val?.toString().replace(/[^0-9.]/g, "") || "0"
         );
 
-        // Get threshold from stored values
         const threshold = sensorThresholdsPerNode[payload.node_id]?.[key];
+        const sensorForClassification = { name: key, threshold: threshold };
 
-        sensors[key] = {
+        newSensors[key] = {
             value: numericValue,
-            status: threshold
-                ? numericValue >= threshold.bahaya
-                    ? "bahaya"
-                    : numericValue >= threshold.waspada
-                    ? "waspada"
-                    : "aman"
-                : classifyStatus(numericValue, { name: key }), // Fallback
-            threshold: threshold, // Include threshold in sensor data
+            status: classifyStatus(numericValue, sensorForClassification),
+            threshold: threshold,
         };
     }
 
-    if (Object.keys(sensors).length > 0) {
-        const previous = state.nodes[payload.node_id]?.sensors || {};
-
+    if (Object.keys(newSensors).length > 0) {
         state.nodes[payload.node_id] = {
             name: node.name || "Titik Pantau",
             updatedAt,
-            sensors: {
-                ...previous,
-                ...sensors,
-            },
+            sensors: newSensors,
         };
     }
-
-    // if (Object.keys(sensors).length > 0) {
-    //     state.nodes[payload.node_id] = {
-    //         name: node.name || "Titik Pantau",
-    //         updatedAt,
-    //         sensors,
-    //     };
-    // }
 };
 
+// --- COMPUTED PROPERTIES ---
 const nodeData = computed(() => Object.entries(state.nodes));
 const activeNode = computed(() =>
     nodeData.value.length > 0 ? nodeData.value[activeNodeIndex.value] : null
 );
 
+const overallStatus = computed(() => {
+    if (nodeData.value.length === 0) {
+        return null;
+    }
+
+    const counts = { bahaya: 0, waspada: 0, aman: 0, "No Data": 0 };
+    const statusPriority = ["bahaya", "waspada", "aman", "No Data"];
+    let overallSystemStatus = "aman";
+    const alertNodesList = [];
+
+    const nodeStatuses = Object.values(state.nodes).map((node) => {
+        let highestNodeStatus = "No Data";
+        if (node.sensors && Object.keys(node.sensors).length > 0) {
+            highestNodeStatus = "aman";
+            for (const sensor of Object.values(node.sensors)) {
+                if (
+                    statusPriority.indexOf(sensor.status) <
+                    statusPriority.indexOf(highestNodeStatus)
+                ) {
+                    highestNodeStatus = sensor.status;
+                }
+            }
+        }
+        counts[highestNodeStatus]++;
+        return { name: node.name, status: highestNodeStatus };
+    });
+
+    for (const status of statusPriority) {
+        if (counts[status] > 0) {
+            overallSystemStatus = status;
+            break;
+        }
+    }
+
+    if (overallSystemStatus === "waspada" || overallSystemStatus === "bahaya") {
+        nodeStatuses.forEach((node) => {
+            if (node.status === "waspada" || node.status === "bahaya") {
+                alertNodesList.push(node.name);
+            }
+        });
+    }
+
+    return {
+        overall: overallSystemStatus,
+        counts: counts,
+        alertNodes: alertNodesList,
+    };
+});
+
+// --- FUNGSI NAVIGASI NODE ---
 const nextNode = () => {
     activeNodeIndex.value = (activeNodeIndex.value + 1) % nodeData.value.length;
 };
@@ -182,13 +222,12 @@ const prevNode = () => {
         nodeData.value.length;
 };
 
+// --- LIFECYCLE HOOKS (MQTT) ---
 onMounted(() => {
     const channel = window.Echo.channel("mqtt-sensor");
-
     channel.listen(".sensor.updated", (e) => {
         handleMQTTData(e.payload);
     });
-
     channel.subscribed(() => {
         console.log("✅ Subscribed to mqtt-sensor");
     });
@@ -204,7 +243,7 @@ onUnmounted(() => {
     <div
         class="min-h-screen bg-gradient-to-b from-blue-50 via-cyan-200 to-blue-400"
     >
-        <div class="max-w-8xl mx-auto pt-20 px-4">
+        <div class="max-w-7xl mx-auto pt-20 px-4">
             <div class="text-center">
                 <h1
                     class="text-lg font-extrabold text-primary sm:text-xl md:text-2xl"
@@ -228,7 +267,57 @@ onUnmounted(() => {
                 </p>
             </div>
 
-            <!-- 1. Belum ada node terdaftar -->
+            <div v-if="overallStatus" class="my-8">
+                <div
+                    class="p-4 rounded-lg shadow-lg text-center"
+                    :class="{
+                        'bg-red-100 border border-red-400 text-red-800':
+                            overallStatus.overall === 'bahaya',
+                        'bg-yellow-100 border border-yellow-400 text-yellow-800':
+                            overallStatus.overall === 'waspada',
+                        'bg-green-100 border border-green-400 text-green-800':
+                            overallStatus.overall === 'aman',
+                        'bg-gray-100 border border-gray-400 text-gray-800':
+                            overallStatus.overall === 'No Data',
+                    }"
+                >
+                    <h2 class="text-xl font-bold uppercase tracking-wider">
+                        Status Keseluruhan: {{ overallStatus.overall }}
+                    </h2>
+                    <div
+                        class="mt-2 flex justify-center items-center gap-x-6 text-sm"
+                    >
+                        <span
+                            ><i class="fa-solid fa-triangle-exclamation"></i>
+                            Bahaya:
+                            <strong>{{
+                                overallStatus.counts.bahaya
+                            }}</strong></span
+                        >
+                        <span
+                            ><i class="fa-solid fa-circle-exclamation"></i>
+                            Waspada:
+                            <strong>{{
+                                overallStatus.counts.waspada
+                            }}</strong></span
+                        >
+                        <span
+                            ><i class="fa-solid fa-circle-check"></i> Aman:
+                            <strong>{{
+                                overallStatus.counts.aman
+                            }}</strong></span
+                        >
+                    </div>
+                    <div
+                        v-if="overallStatus.alertNodes.length > 0"
+                        class="mt-2 text-xs font-semibold"
+                    >
+                        LOKASI TERDAMPAK:
+                        {{ overallStatus.alertNodes.join(", ") }}
+                    </div>
+                </div>
+            </div>
+
             <div v-if="nodeData.length === 0" class="my-16 text-center">
                 <div
                     class="w-56 h-56 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6"
@@ -242,53 +331,12 @@ onUnmounted(() => {
                 </h3>
             </div>
 
-            <!-- 2. Sudah ada node & data sensor di database, tapi belum ada data realtime (activeNode == null) -->
-            <div v-else-if="!activeNode && nodeData.length > 0">
-                <div
-                    v-for="[nodeId, node] in nodeData"
-                    :key="nodeId"
-                    class="mb-8 border-b pb-4"
-                >
-                    <div class="text-center mb-3">
-                        <h2
-                            class="font-semibold text-gray-700 text-base sm:text-lg"
-                        >
-                            {{ node.name }} | Node ID: {{ nodeId }}
-                        </h2>
-                        <p class="text-sm text-gray-500">
-                            Menampilkan data dari database
-                        </p>
-                    </div>
-                    <div class="flex flex-wrap justify-center gap-6">
-                        <template v-for="(sensor, type) in node.sensors">
-                            <StatusCard
-                                v-if="
-                                    [
-                                        'curah_hujan',
-                                        'ketinggian_air',
-                                        'kecepatan_angin',
-                                    ].includes(type)
-                                "
-                                :key="type"
-                                :type="type"
-                                :data="{
-                                    value: sensor.value,
-                                    status: sensor.status,
-                                    location: node.name,
-                                }"
-                            />
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Sudah ada node dan data dari MQTT (realtime) tersedia -->
-            <div v-else class="my-2">
+            <div v-else-if="activeNode" class="pt-2 pb-4">
                 <div class="my-3 flex justify-center items-center gap-4">
                     <button
-                        class="bg-transparent text-gray-700 px-4 py-2 rounded-full hover:bg-blue-200"
+                        class="bg-transparent text-gray-700 px-4 py-2 rounded-full hover:bg-blue-200 disabled:opacity-50"
                         @click="prevNode"
-                        :disabled="nodeData.length === 0"
+                        :disabled="nodeData.length <= 1"
                     >
                         <i class="fa-solid fa-chevron-left text-xl"></i>
                     </button>
@@ -305,9 +353,9 @@ onUnmounted(() => {
                         </p>
                     </div>
                     <button
-                        class="bg-transparent text-gray-700 px-4 py-2 rounded-full hover:bg-blue-200"
+                        class="bg-transparent text-gray-700 px-4 py-2 rounded-full hover:bg-blue-200 disabled:opacity-50"
                         @click="nextNode"
-                        :disabled="nodeData.length === 0"
+                        :disabled="nodeData.length <= 1"
                     >
                         <i class="fa-solid fa-chevron-right text-xl"></i>
                     </button>
@@ -335,6 +383,10 @@ onUnmounted(() => {
                         />
                     </template>
                 </div>
+            </div>
+
+            <div v-else class="my-16 text-center">
+                <p class="text-gray-600">Menunggu data realtime...</p>
             </div>
         </div>
     </div>

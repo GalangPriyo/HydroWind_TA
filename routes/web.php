@@ -11,6 +11,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\WhatsappController;
+use App\Http\Controllers\PushNotificationController;
 
 Route::middleware(['auth', 'verified', 'user'])->group(function () {
     Route::get('/user/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
@@ -61,6 +62,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::delete('/profile', [ProfileController::class, 'destroyProfile'])->name('profile.destroy');
 });
+
+Route::post('/push/test', [PushNotificationController::class, 'sendTestNotification'])
+    ->middleware(['auth']) // Cukup gunakan 'auth'
+    ->name('push.test');
 
 //GUEST
 Route::get('/', [GuestController::class, 'home'])->name('home');

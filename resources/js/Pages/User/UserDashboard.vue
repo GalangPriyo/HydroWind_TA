@@ -2,6 +2,7 @@
 import { Head, Link, router } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Swal from "sweetalert2";
+import TestPushNotification from "@/Components/TestPushNotification.vue";
 
 defineOptions({ layout: AuthenticatedLayout });
 defineProps({
@@ -261,6 +262,10 @@ const confirmDelete = () => {
                 </div>
             </div>
         </div>
+    </div>
+    <!-- Test Push Notification Component -->
+    <div class="max-w-8xl mx-auto px-4 py-8">
+        <TestPushNotification />
     </div>
 </template>
 

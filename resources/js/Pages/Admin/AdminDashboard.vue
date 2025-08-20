@@ -2,6 +2,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import { ref, onMounted, computed, watch } from "vue";
 import { Head, Link, router } from "@inertiajs/vue3";
+import TestPushNotification from "@/Components/TestPushNotification.vue";
 defineOptions({ layout: AuthenticatedLayout });
 
 // Props untuk menerima data dari controller
@@ -442,6 +443,10 @@ const getBatteryIcon = (level) => {
                 </p>
             </div>
         </div>
+    </div>
+    <!-- Test Push Notification Component -->
+    <div class="max-w-8xl mx-auto px-4 py-8">
+        <TestPushNotification />
     </div>
 </template>
 
